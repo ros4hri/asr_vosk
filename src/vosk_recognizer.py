@@ -23,11 +23,10 @@ class VoskSpeech(Thread):
         self.aqueue = queue.Queue(maxsize=2000) # more than one minute 
         self.condition = Condition()
 
-        self.audio_rate = 16000
-        self.language = "en_US"
+        self.audio_rate = rospy.get_param("/vosk_app/audio_rate", 16000)
+        self.language = rospy.get_param("/vosk_app/vosk/default_language", 'en_US')
         self.user_is_speaking = False
-        self.model_path = '/home/user/ws/src/ros-vosk/model/'
-        self.language = ""
+        self.model_path = rospy.get_param("/vosk_app/vosk/vosk_model_path")
         # initialize vosk 
         self.user_speaks = Bool()
         self.model = vosk.Model(self.model_path + self.language)

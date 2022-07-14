@@ -1,7 +1,7 @@
-vosk_recognizer_config:
+vosk_app:
   audio_rate: 16000
 
   vosk:
-    vosk_model_path: '/home/voicebot_ws/src/ros-vosk/model/'  
+    vosk_model_path: '/home/Vosk/models/'  
     default_language: 'en_US'
   
