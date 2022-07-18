@@ -1,7 +1,5 @@
-vosk_app:
+vosk_asr:
   audio_rate: 16000
-
-  vosk:
-    vosk_model_path: '/home/Vosk/models/'  
-    default_language: 'en_US'
+  default_langauge: 'en_GB'
+  vosk_model_path: '/home/Vosk/models/'  
   

@@ -40,7 +40,7 @@ Download desired Vosk language models from here https://alphacephei.com/vosk/mod
 Then rename the model folder in ISO language format name (e.g. en_GB, fr_FR)
 
 
-## Lunching Vosk App service and trying it
+## Launching Vosk App service and trying it
 ```
 $ roslaunch vosk_asr vosk_recognizer.launch 
 
@@ -53,7 +53,7 @@ options:[]
 timeout: 0"
 ```
 
-or give your expected words as options. The app will look into the recognized script to find one of the option and return it. For example, for the following call, if you say *"Oh yes!"*, the resturn value of the service is *"yes"*.
+or give your expected words as options. The app will look into the recognized script to find one of the option and return it. For example, for the following call, if you say *"Oh yes!"*, the return value of the service is *"yes"*.
 
 ```
 $ rosservice call /speech/recognize "language: 'en_US'
@@ -61,22 +61,21 @@ options:['yes' 'no' 'maybe']
 timeout: 0"
 ```
 
-Note for PAL this is under testing
+Note for PAL recognising specific keywords like in the above example is under testing and right now the "options" parameter is ignored. 
 
 Instead of using the ROS service, the node also subscribes to respeaker_ros topics to start listening.
 
 Once /is_speeching returns True, indicating a user is speaking, it will start publishing the following topics:
 
-/humans/voices/anonymous_id/is_speaking [Bool] -> is a user speaking or not, remapping /is_speech from ReSpeaker
+`/humans/voices/anonymous_speaker/is_speaking` [`std_msgs/Bool`] -> is a user speaking or not, remapping /is_speech from ReSpeaker
 
-/humans/voices/anonymous_id/audio [AudioData] -> remaps /audio topic (channel 0 preprocessed audio from the mic) only when user is speaking
+`/humans/voices/anonymous_speaker/audio` [`sensor_msgs/AudioData`] -> the audio stream corresponding to this voice. In the current implementation (eg with no voice separation), simply republish the `/audio` topic (reSpeaker's `channel 0`  preprocessed audio) when voice activity is detected.
 
 
-/humans/voices/anonymous_id/speech [String] -> partial words recognised, as long at least one word is recognized
+`/humans/voices/anonymous_speaker/speech` [`hri_msgs/LiveSpeech`]` -> incremental or final sentence recognised, as long at least one word is recognized
 
-/humans/voices/anonymous_id/speech_final [String] -> final sentence recognised, returned when user is detected not speaking after a while
 
 
 ## Data and testing
 
-In the "data" folder there is already 2 rosbags with example input data, and also a vosk_recognizer.bag with example output. 
+In the "data" folder there are several rosbags with example input AudioData coming from the ReSpeaker that can be used for testing

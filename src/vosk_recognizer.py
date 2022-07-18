@@ -1,4 +1,31 @@
 #!/usr/bin/env python3
+# Copyright (c) 2021 PAL Robotics S.L. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#
+#  1. Redistributions of source code must retain the above copyright notice,
+#  this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#  this list of conditions and the following disclaimer in the documentation
+#  and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its
+#  contributors may be used to endorse or promote products derived from this
+#  software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+#  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+#  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+#  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+#  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+#  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+#  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Code based on LuxAI work: https://github.com/luxai-qtrobot/software/blob/master/apps/qt_vosk_app
+
 import os
 import queue
 import time
@@ -10,7 +37,7 @@ from threading import Thread, Condition
 from std_msgs.msg import String, Bool
 from audio_common_msgs.msg import AudioData
 from vosk_asr.srv import *
-
+from hri_msgs.msg import LiveSpeech
 
 
 class VoskSpeech(Thread):
@@ -20,21 +47,19 @@ class VoskSpeech(Thread):
         super(VoskSpeech, self).__init__()
 
         self.is_kaldi_recognizing = False
-        self.aqueue = queue.Queue(maxsize=2000) # more than one minute 
-        self.condition = Condition()
-
-        self.audio_rate = rospy.get_param("/vosk_app/audio_rate", 16000)
-        self.language = rospy.get_param("/vosk_app/vosk/default_language", 'en_US')
+        self.audio_data_queue = queue.Queue(maxsize=2000) # more than one minute 
+        self.audio_rate = rospy.get_param("/vosk_asr/audio_rate", 16000)
+        self.language = rospy.get_param("/vosk_asr/default_language", 'en_GB')
         self.user_is_speaking = False
-        self.model_path = rospy.get_param("/vosk_app/vosk/vosk_model_path")
+        self.model_path = rospy.get_param("/vosk_asr/vosk_model_path")
         # initialize vosk 
         self.user_speaks = Bool()
+        self.speech_goal = LiveSpeech()
         self.model = vosk.Model(self.model_path + self.language)
         self.enable_hotword = True 
-        self.recognize_pub = rospy.Publisher('/humans/voices/anonymous_id/speech_final', String, queue_size=10)       
-        self.pub_partial = rospy.Publisher('/humans/voices/anonymous_id/speech',String, queue_size=10)
-        self.pub_voice_audio = rospy.Publisher('/humans/voices/anonymous_id/audio', AudioData, queue_size=10)
-        self.pub_is_speaking = rospy.Publisher('/humans/voices/anonymous_id/is_speaking', Bool, queue_size=10)
+        self.pub_speech = rospy.Publisher('/humans/voices/anonymous_speaker/speech', LiveSpeech, queue_size=10)
+        self.pub_voice_audio = rospy.Publisher('/humans/voices/anonymous_speaker/audio', AudioData, queue_size=10)
+        self.pub_is_speaking = rospy.Publisher('/humans/voices/anonymous_speaker/is_speaking', Bool, queue_size=10)
         # start recognize service
         self.speech_recognize = rospy.Service('/speech/recognize', speech_recognize, self.callback_recognize)
         rospy.Subscriber('/audio', AudioData, self.callback_audio_stream)
@@ -47,25 +72,23 @@ class VoskSpeech(Thread):
 
 
     def stop(self):
-        with self.condition:
-            self.condition.notifyAll()
+         rospy.loginfo("vosk ASR stopping")
 
 
     def run(self):
         """
-        background thread which wait for wakeword and recognize 
-        whatever being said after wakeword
+        background thread which waits for any speech detection and processes it with Kaldi
         """
         while not rospy.is_shutdown():
-            with self.condition:
-                self.condition.wait()
             if rospy.is_shutdown():
                 break
             transcript = self.recognize_kaldi(10, [], clear_queue=True)
-            print(transcript)
+            rospy.logdebug(transcript)
             if transcript:
-                self.pub_partial.publish(transcript)
-                self.recognize_pub.publish(transcript)
+                self.speech_goal.incremental = transcript
+                self.speech_goal.final = transcript
+                self.pub_speech.publish(self.speech_goal)
+                rospy.loginfo(self.speech_goal)
 
     def user_speaking(self, speech):
         if (speech.data):
@@ -73,28 +96,25 @@ class VoskSpeech(Thread):
         if(self.user_is_speaking):
             if (not speech.data) and (self.cout_is_speak < self.max_no_voice): #6 continuous no speaking
                 self.cout_is_speak +=1
-                print("once false")
             elif speech.data:
                 self.cout_is_speak = 0 #restart counter if again a speech detected is seen
             else:
-                print("user is speaking false")
                 self.user_is_speaking = False
+                self.speech_goal = LiveSpeech()
         self.user_speaks.data = self.user_is_speaking
         self.pub_is_speaking.publish(self.user_speaks)
 
     def callback_audio_stream(self, msg):
         indata = bytes(msg.data)
         try:
-            self.aqueue.put_nowait(indata)
+            self.audio_data_queue.put_nowait(indata)
 
         except:
             pass
 
-        # check for hotword if kaldi is not busy recognizing 
-        if self.user_is_speaking and not self.is_kaldi_recognizing:
-                self.pub_voice_audio.publish(msg.data) #publish speech audio data while recognising
-                with self.condition:
-                    self.condition.notifyAll()
+        # check if user is speaking in order to publish speech audio and start recognising if not done already 
+        if self.user_is_speaking:
+            self.pub_voice_audio.publish(msg.data) #publish speech audio data while recognising
 
 
     """
@@ -104,10 +124,9 @@ class VoskSpeech(Thread):
         print("options:", len(req.options), req.options)
         print("language:", req.language)
         print("timeout:", str(req.timeout))
-        timeout = (req.timeout if (req.timeout != 0) else 15)
+        self.timeout = (req.timeout if (req.timeout != 0) else 15)
         language = (req.language if (req.language != '') else self.language)
-        options = list(filter(None, req.options)) # remove the empty options 
-
+        self.options = list(filter(None, req.options)) # remove the empty options 
         # check if we need to change the language model
         # print('current language: ' + self.language)
         if language != self.language:
@@ -122,8 +141,7 @@ class VoskSpeech(Thread):
                 rospy.loginfo('could not load language model for ' + language)
                 return speech_recognizeResponse('')
 
-        transcript = self.recognize_kaldi(timeout, options, True)
-        return speech_recognizeResponse(transcript)
+        return speech_recognizeResponse('parameters changed')
 
 
 
@@ -143,8 +161,8 @@ class VoskSpeech(Thread):
         self.is_kaldi_recognizing = True
         if clear_queue:
             # example : if audio rate is 16000 and respeaker buffersize is 512, then the last one second will be around 31 item in queue
-            while self.aqueue.qsize() > int(self.audio_rate / 512 / 2):
-                self.aqueue.get()
+            while self.audio_data_queue.qsize() > int(self.audio_rate / 512 / 2):
+                self.audio_data_queue.get()
 
         if options:
             rec = vosk.KaldiRecognizer(self.model, self.audio_rate, json.dumps(options, ensure_ascii=False))
@@ -155,8 +173,9 @@ class VoskSpeech(Thread):
         rec.SetWords(True)
         rec.SetPartialWords(True)
         transcript = ''
+        self.speech_audio = LiveSpeech()
         while True:
-            data = self.aqueue.get()
+            data = self.audio_data_queue.get()
 
             if rec.AcceptWaveform(data):
                 result = rec.Result()
@@ -169,8 +188,10 @@ class VoskSpeech(Thread):
                  jres = json.loads(result)
                  partial = jres['partial']
                  self.user_speaks.data = True
-                 if (len(partial) > 0):
-                     self.pub_partial.publish(partial)
+                 if (partial!=self.speech_goal.incremental):
+                     self.speech_goal.incremental = partial
+                     self.speech_goal.final = ""
+                     self.pub_speech.publish(self.speech_goal)
                  word = self.contains_options(options, partial)
                  if word:
                      transcript = word
