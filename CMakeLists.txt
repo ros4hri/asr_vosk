@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   hri_msgs
   message_generation
+  pal_interaction_msgs
 )
 
 add_service_files(
@@ -19,7 +20,7 @@ generate_messages(
 )
 
 catkin_package(
-   CATKIN_DEPENDS rospy std_msgs message_runtime hri_msgs
+   CATKIN_DEPENDS rospy std_msgs message_runtime hri_msgs pal_interaction_msgs
 )
 #include_directories(
 #  ${catkin_INCLUDE_DIRS}

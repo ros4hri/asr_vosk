@@ -38,6 +38,7 @@ from std_msgs.msg import String, Bool
 from audio_common_msgs.msg import AudioData
 from vosk_asr.srv import *
 from hri_msgs.msg import LiveSpeech
+from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 
 
 class VoskSpeech(Thread):
@@ -64,9 +65,12 @@ class VoskSpeech(Thread):
         self.speech_recognize = rospy.Service('/speech/recognize', speech_recognize, self.callback_recognize)
         rospy.Subscriber('/audio', AudioData, self.callback_audio_stream)
         rospy.Subscriber('/is_speeching', Bool, self.user_speaking)
+        rospy.Subscriber('/tts/goal', TtsActionGoal, self.tts_start)
+        rospy.Subscriber('/tts/result', TtsActionResult, self.tts_end)
         self.cout_speaking= 0
         self.max_no_voice = 1
         self.user_is_speaking = False
+        self.robot_speaking = False
         # start the background thread 
         self.start()
 
@@ -74,7 +78,12 @@ class VoskSpeech(Thread):
     def stop(self):
          rospy.loginfo("vosk ASR stopping")
 
-
+    def tts_start(self, msg):
+        self.robot_speaking = True 
+        
+    def tts_end(self, msg):
+        self.robot_speaking = False
+        
     def run(self):
         """
         background thread which waits for any speech detection and processes it with Kaldi
@@ -87,8 +96,9 @@ class VoskSpeech(Thread):
             if transcript:
                 self.speech_goal.incremental = transcript
                 self.speech_goal.final = transcript
-                self.pub_speech.publish(self.speech_goal)
-                rospy.loginfo(self.speech_goal)
+                if ((not self.robot_speaking) and (len(self.speech_goal.incremental)!=0)):
+                  self.pub_speech.publish(self.speech_goal)
+                  rospy.loginfo(self.speech_goal)
 
     def user_speaking(self, speech):
         if (speech.data):
@@ -174,7 +184,7 @@ class VoskSpeech(Thread):
         rec.SetPartialWords(True)
         transcript = ''
         self.speech_audio = LiveSpeech()
-        while True:
+        while not self.robot_speaking:
             data = self.audio_data_queue.get()
 
             if rec.AcceptWaveform(data):
@@ -188,7 +198,7 @@ class VoskSpeech(Thread):
                  jres = json.loads(result)
                  partial = jres['partial']
                  self.user_speaks.data = True
-                 if (partial!=self.speech_goal.incremental):
+                 if ((partial!=self.speech_goal.incremental) and (len(partial)!=0)):
                      self.speech_goal.incremental = partial
                      self.speech_goal.final = ""
                      self.pub_speech.publish(self.speech_goal)
