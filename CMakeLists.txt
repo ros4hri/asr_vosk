@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_service_files(
    FILES
-   speech_recognize.srv
+   ASRConfigure.srv
 )
 
 generate_messages(
