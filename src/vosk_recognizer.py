@@ -192,7 +192,7 @@ class VoskSpeech(Thread):
 
         t_start = time.time()
         rec.SetWords(True)
-        rec.SetPartialWords(True)
+       # rec.SetPartialWords(True)
         transcript = ''
         self.speech_audio = LiveSpeech()
         while not self.robot_speaking:
@@ -209,8 +209,10 @@ class VoskSpeech(Thread):
                 jres = json.loads(result)
                 partial = jres['partial']
                 self.user_speaks.data = True
+                 
                 if ((partial != self.speech_goal.incremental)
-                        and (len(partial) != 0)):
+                        and (partial!="")):
+                    
                     self.speech_goal.incremental = partial
                     self.speech_goal.final = ""
                     self.pub_speech.publish(self.speech_goal)
