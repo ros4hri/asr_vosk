@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
    FILES
    ASRConfigure.srv
+   SetASRLanguage.srv
 )
 
 generate_messages(

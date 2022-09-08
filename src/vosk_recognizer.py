@@ -39,7 +39,7 @@ from threading import Thread, Condition
 
 from std_msgs.msg import String, Bool
 from audio_common_msgs.msg import AudioData
-from vosk_asr.srv import ASRConfigure
+from vosk_asr.srv import ASRConfigure, SetASRLanguage
 from hri_msgs.msg import LiveSpeech
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 
@@ -73,6 +73,8 @@ class VoskSpeech(Thread):
         # start recognize service
         self.speech_recognize = rospy.Service(
             '/vosk_asr/configure', ASRConfigure, self.callback_asr_configure)
+        self.change_language = rospy.Service(
+            '/vosk_asr/set_lang', SetASRLanguage, self.language_setter)
         rospy.Subscriber('/audio', AudioData, self.callback_audio_stream)
         rospy.Subscriber('/is_speeching', Bool, self.user_speaking)
         rospy.Subscriber('/tts/goal', TtsActionGoal, self.tts_start)
@@ -138,7 +140,10 @@ class VoskSpeech(Thread):
         if self.user_is_speaking:
             # publish speech audio data while recognising
             self.pub_voice_audio.publish(msg.data)
-
+            
+    def language_setter(self, req):
+        self.model = vosk.Model(self.model_path + req.language)
+        return True
     """
         ros speech recognize callback
     """
