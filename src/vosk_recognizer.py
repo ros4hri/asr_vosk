@@ -39,7 +39,7 @@ from threading import Thread, Condition
 
 from std_msgs.msg import String, Bool
 from audio_common_msgs.msg import AudioData
-from vosk_asr.srv import ASRConfigure, SetASRLanguage
+from vosk_asr.srv import ASRConfigure, StartASR, StopASR, StartASRResponse, StopASRResponse
 from hri_msgs.msg import LiveSpeech
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 
@@ -73,8 +73,10 @@ class VoskSpeech(Thread):
         # start recognize service
         self.speech_recognize = rospy.Service(
             '/vosk_asr/configure', ASRConfigure, self.callback_asr_configure)
-        self.change_language = rospy.Service(
-            '/vosk_asr/set_lang', SetASRLanguage, self.language_setter)
+        self.start_asr = rospy.Service(
+            '/vosk_asr/start', StartASR, self.start_recognizing)
+        self.stop_asr = rospy.Service(
+            '/vosk_asr/stop', StopASR, self.stop_recognizing)
         rospy.Subscriber('/audio', AudioData, self.callback_audio_stream)
         rospy.Subscriber('/is_speeching', Bool, self.user_speaking)
         rospy.Subscriber('/tts/goal', TtsActionGoal, self.tts_start)
@@ -84,10 +86,21 @@ class VoskSpeech(Thread):
         self.user_is_speaking = False
         self.robot_speaking = False
         # start the background thread
+        self.listen = False
         self.start()
 
-    def stop(self):
-        rospy.loginfo("vosk ASR stopping")
+    def start_recognizing(self, act):
+        self.listen = True
+        self.model = vosk.Model(self.model_path + act.language)
+        self.language = act.language
+        rospy.loginfo("started listening in language: " + act.language)
+        return (StartASRResponse(True))
+      #  self.vosk_action.set_succeeded(StartVoskResult())
+
+    def stop_recognizing(self, srv):
+        self.listen = False
+        rospy.loginfo("stopping listening")
+        return (StopASRResponse(True))
 
     def tts_start(self, msg):
         self.robot_speaking = True
@@ -99,18 +112,21 @@ class VoskSpeech(Thread):
         """
         background thread which waits for any speech detection and processes it with Kaldi
         """
+        rospy.loginfo("started vosk")
         while not rospy.is_shutdown():
             if rospy.is_shutdown():
                 break
-            transcript = self.recognize_kaldi(10, [], clear_queue=True)
-            rospy.logdebug(transcript)
-            if transcript:
-                self.speech_goal.incremental = transcript
-                self.speech_goal.final = transcript
-                if ((not self.robot_speaking) and (
-                        len(self.speech_goal.incremental) != 0)):
-                    self.pub_speech.publish(self.speech_goal)
-                    rospy.loginfo(self.speech_goal)
+            if (self.listen == True):  # only process if listen is set to true
+                transcript = self.recognize_kaldi(10, [], clear_queue=True)
+                rospy.logdebug(transcript)
+                if transcript:
+                    self.speech_goal.incremental = transcript
+                    self.speech_goal.final = transcript
+                    if ((not self.robot_speaking) and (
+                            len(self.speech_goal.incremental) != 0)):
+                        self.pub_speech.publish(self.speech_goal)
+                        rospy.loginfo(self.speech_goal)
+            #rospy.loginfo("preempt called")
 
     def user_speaking(self, speech):
         if (speech.data):
@@ -140,10 +156,7 @@ class VoskSpeech(Thread):
         if self.user_is_speaking:
             # publish speech audio data while recognising
             self.pub_voice_audio.publish(msg.data)
-            
-    def language_setter(self, req):
-        self.model = vosk.Model(self.model_path + req.language)
-        return True
+
     """
         ros speech recognize callback
     """
@@ -187,6 +200,8 @@ class VoskSpeech(Thread):
             # then the last one second will be around 31 item in queue
             while self.audio_data_queue.qsize() > int(self.audio_rate / 512 / 2):
                 self.audio_data_queue.get()
+                if (self.listen == False):
+                    break
 
         if options:
             rec = vosk.KaldiRecognizer(
@@ -200,7 +215,7 @@ class VoskSpeech(Thread):
        # rec.SetPartialWords(True)
         transcript = ''
         self.speech_audio = LiveSpeech()
-        while not self.robot_speaking:
+        while not (self.robot_speaking and self.listen == True):
             data = self.audio_data_queue.get()
 
             if rec.AcceptWaveform(data):
@@ -214,10 +229,10 @@ class VoskSpeech(Thread):
                 jres = json.loads(result)
                 partial = jres['partial']
                 self.user_speaks.data = True
-                 
+
                 if ((partial != self.speech_goal.incremental)
-                        and (partial!="")):
-                    
+                        and (partial != "")):
+
                     self.speech_goal.incremental = partial
                     self.speech_goal.final = ""
                     self.pub_speech.publish(self.speech_goal)
@@ -242,4 +257,3 @@ if __name__ == "__main__":
     rospy.loginfo("vosk_recognizer is ready!")
     rospy.spin()
     rospy.loginfo("vosk_recognizer shutdown")
-    speech.stop()

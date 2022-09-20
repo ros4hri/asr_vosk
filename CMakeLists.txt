@@ -12,7 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
    FILES
    ASRConfigure.srv
-   SetASRLanguage.srv
+   StartASR.srv
+   StopASR.srv
 )
 
 generate_messages(
@@ -30,5 +31,4 @@ catkin_package(
 catkin_install_python(PROGRAMS src/vosk_recognizer.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-install(DIRECTORY launch config
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
