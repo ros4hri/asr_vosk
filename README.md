@@ -34,7 +34,7 @@ $ source devel/setup.bash
 
 Download desired Vosk language models from here https://alphacephei.com/vosk/models and copy them in the following directory inside the robot:
 
-/home/voicebot_ws/src/ros-vosk/model/
+/home/Vosk/models/
 
 
 Then rename the model folder in ISO language format name (e.g. en_GB, fr_FR)
@@ -45,6 +45,15 @@ Then rename the model folder in ISO language format name (e.g. en_GB, fr_FR)
 $ roslaunch vosk_asr vosk_recognizer.launch 
 
 ```
+
+To change the language:
+
+```
+$rosservice call /vosk_asr/set_lang "language: 'es_ES'" 
+```
+
+
+More advanced:
 
 open another terminal and try:
 ```
