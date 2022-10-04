@@ -54,13 +54,13 @@ class VoskSpeech(Thread):
         self.audio_data_queue = queue.Queue(
             maxsize=2000)  # more than one minute
         self.audio_rate = rospy.get_param("/vosk_asr/audio_rate", 16000)
-        self.language = rospy.get_param("/vosk_asr/default_language", 'en_GB')
+        self.language = rospy.get_param("/vosk_asr/default_language", 'en_US')
         self.user_is_speaking = False
         self.model_path = rospy.get_param("/vosk_asr/vosk_model_path")
         # initialize vosk
         self.user_speaks = Bool()
         self.speech_goal = LiveSpeech()
-        self.model = vosk.Model(self.model_path + self.language)
+        self.model = vosk.Model(self.model_path + "vosk_language_model_"+(self.language).lower() + "_small") #by default use large database of english
         self.enable_hotword = True
         self.pub_speech = rospy.Publisher(
             '/humans/voices/anonymous_speaker/speech',
@@ -91,11 +91,29 @@ class VoskSpeech(Thread):
 
     def start_recognizing(self, act):
         self.listen = True
-        self.model = vosk.Model(self.model_path + act.language)
-        self.language = act.language
-        rospy.loginfo("started listening in language: " + act.language)
-        return (StartASRResponse(True))
-      #  self.vosk_action.set_succeeded(StartVoskResult())
+        model_name = "vosk_language_model_" + (act.language).lower() #need to convert it as models are stored in format vosk_language_model_en_us_large, small letters
+        if not (os.path.exists(self.model_path+model_name)): #if en_US package does not exist for instance
+          for file in os.listdir(self.model_path):
+            main_lang = (act.language).split("_")[0]
+            if main_lang in file: #if "en" is in subdir "en_GB"
+              self.model_path = self.model_path + file #get full path
+        else:
+           self.model_path = self.model_path+model_name
+        if (os.path.exists(self.model_path+"_large")): #check if large database exists
+          self.model_path += "_large"
+          self.model = vosk.Model(self.model_path)
+          self.language = act.language
+          rospy.loginfo("started listening in language: " + act.language)
+          return (StartASRResponse(True))
+        elif (os.path.exists(self.model_path+"_small")):
+          self.model_path+="_small"
+          self.model = vosk.Model(self.model_path)
+          self.language = act.language
+          rospy.loginfo("started listening in language: " + act.language)
+          return (StartASRResponse(True))
+        else:
+          rospy.logerr("Model does not exist")
+          return (StartASResponse(False))
 
     def stop_recognizing(self, srv):
         self.listen = False
@@ -171,11 +189,11 @@ class VoskSpeech(Thread):
             # VOSK python API does not implement exception!
             # so we need to check the path by ourselves
 
-            if os.path.exists(self.model_path + language):
-                self.model = vosk.Model(self.model_path + language)
+            if os.path.exists(self.model_path + language+"/large"):
+                self.model = vosk.Model(self.model_path + language+"/large")
                 self.language = language
             else:
-                rospy.loginfo('could not load language model for ' + language)
+                rospy.loginfo('could not load language model for ' + language+"/large")
                 return speech_recognizeResponse('')
 
         return speech_recognizeResponse('parameters changed')
