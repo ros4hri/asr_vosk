@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_service_files(
    FILES
-   ASRConfigure.srv
    StartASR.srv
    StopASR.srv
 )
