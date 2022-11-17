@@ -9,12 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   pal_interaction_msgs
 )
 
-add_service_files(
-   FILES
-   StartASR.srv
-   StopASR.srv
-)
-
 generate_messages(
    DEPENDENCIES
    std_msgs

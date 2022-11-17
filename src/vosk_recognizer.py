@@ -39,17 +39,23 @@ from threading import Thread, Condition
 
 from std_msgs.msg import String, Bool
 from audio_common_msgs.msg import AudioData
-from vosk_asr.srv import StartASR, StopASR, StartASRResponse, StopASRResponse
 from hri_msgs.msg import LiveSpeech
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
-
-
+import actionlib
+import hri_msgs
 class VoskSpeech(Thread):
     """Vosk speech rcognition"""
 
     def __init__(self):
         super(VoskSpeech, self).__init__()
-
+        self._vosk_start_as = actionlib.SimpleActionServer("vosk_start",
+                                                hri_msgs.msg.StartVoskAction,
+                                                execute_cb=self.start_recognizing,
+                                                auto_start=False)
+        self._vosk_stop_as = actionlib.SimpleActionServer("vosk_stop",
+                                                hri_msgs.msg.StopVoskAction,
+                                                execute_cb= self.stop_recognizing,
+                                                auto_start=False)
         self.is_kaldi_recognizing = False
         self.audio_data_queue = queue.Queue(
             maxsize=2000)  # more than one minute
@@ -70,11 +76,6 @@ class VoskSpeech(Thread):
             '/humans/voices/anonymous_speaker/audio', AudioData, queue_size=10)
         self.pub_is_speaking = rospy.Publisher(
             '/humans/voices/anonymous_speaker/is_speaking', Bool, queue_size=10)
-        # start recognize service
-        self.start_asr = rospy.Service(
-            '/vosk_asr/start', StartASR, self.start_recognizing)
-        self.stop_asr = rospy.Service(
-            '/vosk_asr/stop', StopASR, self.stop_recognizing)
         rospy.Subscriber('/audio', AudioData, self.callback_audio_stream)
         rospy.Subscriber('/is_speeching', Bool, self.user_speaking)
         rospy.Subscriber('/tts/goal', TtsActionGoal, self.tts_start)
@@ -85,9 +86,13 @@ class VoskSpeech(Thread):
         self.robot_speaking = False
         # start the background thread
         self.listen = False
+        self._vosk_start_as.start()
+        self._vosk_stop_as.start()
+        rospy.loginfo("Vosk action servers ready")
         self.start()
 
     def start_recognizing(self, act):
+        rospy.loginfo("Change Vosk lang request, to "+act.language)
         self.listen = True
         model_name = act.language #need to convert it as models are stored in format vosk_language_model_en_us_large, small letters
         if not (os.path.exists(self.model_path+model_name)): #if en_US package does not exist for instance
@@ -103,13 +108,13 @@ class VoskSpeech(Thread):
           self.model = vosk.Model(self.model_path)
           self.language = act.language
           rospy.loginfo("started listening in language: " + act.language)
-          return (StartASRResponse(True))
+          self._vosk_start_as.set_succeeded(True)
         elif (os.path.exists(self.model_path+"/small")):
           self.model_path+="/small"
           self.model = vosk.Model(self.model_path)
           self.language = act.language
           rospy.loginfo("started listening in language: " + act.language)
-          return (StartASRResponse(True))
+          self._vosk_start_as.set_succeeded(True)
         else:
           rospy.loginfo("Checking in opt/pal/gallium/share/vosk_language_models directory")
           if not (os.path.exists(self.default_dir+model_name)): #if en_US package does not exist for instance
@@ -126,21 +131,23 @@ class VoskSpeech(Thread):
             self.model = vosk.Model(self.default_dir)
             self.language = act.language
             rospy.loginfo("started listening in language: " + act.language)
-            return (StartASRResponse(True))
+            self._vosk_start_as.set_succeeded(True) 
+
           elif (os.path.exists(self.default_dir+"/small")):
             self.default_dir+="/small"
             self.model = vosk.Model(self.default_dir)
             self.language = act.language
             rospy.loginfo("started listening in language: " + act.language)
-            return (StartASRResponse(True))
+            self._vosk_start_as.set_succeeded(True)
+            #return (StartASRResponse(True))
           else:
             rospy.logerr("no available language")
-            return (StartASRResponse(False))
+            self._vosk_start_as.set_succeeded(False)
 
-    def stop_recognizing(self, srv):
+    def stop_recognizing(self, act):
         self.listen = False
         rospy.loginfo("stopping listening")
-        return (StopASRResponse(True))
+        self._vosk_stop_as.set_succeeded(True)
 
     def tts_start(self, msg):
         self.robot_speaking = True
