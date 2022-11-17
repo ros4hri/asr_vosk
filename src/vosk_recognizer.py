@@ -95,6 +95,7 @@ class VoskSpeech(Thread):
         rospy.loginfo("Change Vosk lang request, to "+act.language)
         self.listen = True
         model_name = act.language #need to convert it as models are stored in format vosk_language_model_en_us_large, small letters
+        self.model_path = rospy.get_param("/vosk_asr/vosk_model_path", "/opt/pal/gallium/share/vosk_language_models/")
         if not (os.path.exists(self.model_path+model_name)): #if en_US package does not exist for instance
           for file in os.listdir(self.model_path):
             main_lang = (act.language).split("_")[0]
