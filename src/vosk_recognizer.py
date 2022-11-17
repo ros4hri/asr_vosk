@@ -39,7 +39,7 @@ from threading import Thread, Condition
 
 from std_msgs.msg import String, Bool
 from audio_common_msgs.msg import AudioData
-from vosk_asr.srv import ASRConfigure, StartASR, StopASR, StartASRResponse, StopASRResponse
+from vosk_asr.srv import StartASR, StopASR, StartASRResponse, StopASRResponse
 from hri_msgs.msg import LiveSpeech
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 
@@ -54,13 +54,13 @@ class VoskSpeech(Thread):
         self.audio_data_queue = queue.Queue(
             maxsize=2000)  # more than one minute
         self.audio_rate = rospy.get_param("/vosk_asr/audio_rate", 16000)
-        self.language = rospy.get_param("/vosk_asr/default_language", 'en_GB')
+        self.language = rospy.get_param("/vosk_asr/default_language", 'en_US')
         self.user_is_speaking = False
-        self.model_path = rospy.get_param("/vosk_asr/vosk_model_path")
-        # initialize vosk
+        self.model_path = rospy.get_param("/vosk_asr/vosk_model_path", "/opt/pal/gallium/share/vosk_language_models/")
+        self.default_dir = "/opt/pal/gallium/share/vosk_language_models/"
         self.user_speaks = Bool()
         self.speech_goal = LiveSpeech()
-        self.model = vosk.Model(self.model_path + self.language)
+        self.model = vosk.Model(self.model_path +self.language + "/small") #by default use large database of english
         self.enable_hotword = True
         self.pub_speech = rospy.Publisher(
             '/humans/voices/anonymous_speaker/speech',
@@ -71,8 +71,6 @@ class VoskSpeech(Thread):
         self.pub_is_speaking = rospy.Publisher(
             '/humans/voices/anonymous_speaker/is_speaking', Bool, queue_size=10)
         # start recognize service
-        self.speech_recognize = rospy.Service(
-            '/vosk_asr/configure', ASRConfigure, self.callback_asr_configure)
         self.start_asr = rospy.Service(
             '/vosk_asr/start', StartASR, self.start_recognizing)
         self.stop_asr = rospy.Service(
@@ -91,11 +89,53 @@ class VoskSpeech(Thread):
 
     def start_recognizing(self, act):
         self.listen = True
-        self.model = vosk.Model(self.model_path + act.language)
-        self.language = act.language
-        rospy.loginfo("started listening in language: " + act.language)
-        return (StartASRResponse(True))
-      #  self.vosk_action.set_succeeded(StartVoskResult())
+        model_name = act.language #need to convert it as models are stored in format vosk_language_model_en_us_large, small letters
+        if not (os.path.exists(self.model_path+model_name)): #if en_US package does not exist for instance
+          for file in os.listdir(self.model_path):
+            main_lang = (act.language).split("_")[0]
+            if main_lang in file: #if "en" is in subdir "en_GB"
+              self.model_path = self.model_path + file #get full path
+
+        else:
+           self.model_path = self.model_path+model_name
+        if (os.path.exists(self.model_path+"/large")): #check if large database exists
+          self.model_path += "/large"
+          self.model = vosk.Model(self.model_path)
+          self.language = act.language
+          rospy.loginfo("started listening in language: " + act.language)
+          return (StartASRResponse(True))
+        elif (os.path.exists(self.model_path+"/small")):
+          self.model_path+="/small"
+          self.model = vosk.Model(self.model_path)
+          self.language = act.language
+          rospy.loginfo("started listening in language: " + act.language)
+          return (StartASRResponse(True))
+        else:
+          rospy.loginfo("Checking in opt/pal/gallium/share/vosk_language_models directory")
+          if not (os.path.exists(self.default_dir+model_name)): #if en_US package does not exist for instance
+            for file in os.listdir(self.default_dir):
+              main_lang = (act.language).split("_")[0]
+              if main_lang in file: #if "en" is in subdir "en_GB"
+                self.default_dir = self.default_dir + file #get full path
+          else:
+             self.default_dir = self.default_dir+model_name
+             rospy.loginfo("model found")
+
+          if (os.path.exists(self.default_dir+"/large")): #check if large database exists
+            self.default_dir += "/large"
+            self.model = vosk.Model(self.default_dir)
+            self.language = act.language
+            rospy.loginfo("started listening in language: " + act.language)
+            return (StartASRResponse(True))
+          elif (os.path.exists(self.default_dir+"/small")):
+            self.default_dir+="/small"
+            self.model = vosk.Model(self.default_dir)
+            self.language = act.language
+            rospy.loginfo("started listening in language: " + act.language)
+            return (StartASRResponse(True))
+          else:
+            rospy.logerr("no available language")
+            return (StartASRResponse(False))
 
     def stop_recognizing(self, srv):
         self.listen = False
@@ -160,39 +200,6 @@ class VoskSpeech(Thread):
     """
         ros speech recognize callback
     """
-
-    def callback_asr_configure(self, req):
-        self.timeout = (req.timeout if (req.timeout != 0) else 15)
-        language = (req.language if (req.language != '') else self.language)
-        # remove the empty options
-        self.options = list(filter(None, req.options))
-        if language != self.language:
-            rospy.logdebug('switching language to ' + language)
-            # VOSK python API does not implement exception!
-            # so we need to check the path by ourselves
-
-            if os.path.exists(self.model_path + language):
-                self.model = vosk.Model(self.model_path + language)
-                self.language = language
-            else:
-                rospy.loginfo('could not load language model for ' + language)
-                return speech_recognizeResponse('')
-
-        return speech_recognizeResponse('parameters changed')
-
-    def contains_options(self, options, transcript):
-        if not transcript:
-            return None
-        for opt in options:
-            opt = opt.strip()
-            # do not split the transcript of an option contains more than a
-            # word such as 'blue color'
-            phrase = transcript if (
-                len(opt.split()) > 1) else transcript.split()
-            if opt and opt in phrase:
-                return opt
-        return None
-
     def recognize_kaldi(self, timeout, options, clear_queue=False):
         self.is_kaldi_recognizing = True
         if clear_queue:
@@ -252,7 +259,6 @@ class VoskSpeech(Thread):
 
 if __name__ == "__main__":
     rospy.init_node('vosk_recognizer')
-
     speech = VoskSpeech()
     rospy.loginfo("vosk_recognizer is ready!")
     rospy.spin()

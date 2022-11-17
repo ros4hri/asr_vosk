@@ -1,5 +1,5 @@
 vosk_asr:
   audio_rate: 16000
-  default_language: 'es_ES'
-  vosk_model_path: '/home/Vosk/models/'  
+  default_language: 'en_US'
+  vosk_model_path: '/home/ros/.pal/Vosk/vosk_language_models/'  
   

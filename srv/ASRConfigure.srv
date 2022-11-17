@@ -1,5 +1,0 @@
-string language #IETF language code such as en_GB, en_US, es_ES, should match the folder name where the Vosk model is stored
-string[] options #if we want the recognizer to find specific words, such as ['yes', 'no', 'maybe']
-int64 timeout #if we want to stop listening for a full sentence after timeout. If 0, with assume full sentence when no voice detected
----
-string transcript #recognized sentence
