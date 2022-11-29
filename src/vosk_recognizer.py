@@ -80,7 +80,7 @@ class VoskSpeech(Thread):
             '/humans/voices/anonymous_speaker/audio', AudioData, queue_size=10)
         self.pub_is_speaking = rospy.Publisher(
             '/humans/voices/anonymous_speaker/is_speaking', Bool, queue_size=10)
-        rospy.Subscriber('/audio', AudioData, self.callback_audio_stream)
+        rospy.Subscriber('/audio/channel0', AudioData, self.callback_audio_stream)
         rospy.Subscriber('/is_speeching', Bool, self.user_speaking)
         rospy.Subscriber('/tts/goal', TtsActionGoal, self.tts_start)
         rospy.Subscriber('/tts/result', TtsActionResult, self.tts_end)
