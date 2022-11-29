@@ -24,7 +24,7 @@ class ASRDemo(object):
             "/start_asr", StartASRAction)
         self.asr_stop_action = SimpleActionClient("/stop_asr", StopASRAction)
         self.tts_client = SimpleActionClient("/tts", TtsAction)
-        self.language = "en_GB"
+        self.language = "en_US"
         self.asr_start_action.wait_for_server()
         self.asr_stop_action.wait_for_server()
         self.tts_client.wait_for_server()

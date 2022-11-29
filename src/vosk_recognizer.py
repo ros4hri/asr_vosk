@@ -159,10 +159,10 @@ class VoskSpeech(Thread):
 
     def stop_recognizing(self, act):
         self.listen = False
-        result = StopASRResult()
+        result = hri_msgs.msg.StopASRResult()
         result.ready = True
         rospy.loginfo("stopping listening")
-        self._vosk_stop_as.set_succeeded(result)
+        self._asr_stop_as.set_succeeded(result)
 
     def tts_start(self, msg):
         self.robot_speaking = True
@@ -222,7 +222,18 @@ class VoskSpeech(Thread):
     """
         ros speech recognize callback
     """
-
+    def contains_options(self, options, transcript):
+        if not transcript:
+            return None
+        for opt in options:
+            opt = opt.strip()
+            # do not split the transcript of an option contains more than a
+            # word such as 'blue color'
+            phrase = transcript if (
+                len(opt.split()) > 1) else transcript.split()
+            if opt and opt in phrase:
+                return opt
+        return None
     def recognize_kaldi(self, timeout, options, clear_queue=False):
         self.is_kaldi_recognizing = True
         if clear_queue:
