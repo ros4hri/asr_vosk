@@ -21,7 +21,7 @@ catkin_package(
 #  ${catkin_INCLUDE_DIRS}
 #)
 
-catkin_install_python(PROGRAMS src/vosk_recognizer.py src/vosk_tutorial.py src/run_vosk.sh
+catkin_install_python(PROGRAMS src/vosk_recognizer.py src/vosk_tutorial.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
