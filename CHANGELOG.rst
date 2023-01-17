@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Start/StopASR actions are in hri_actions_msgs
+* Contributors: Séverin Lemaignan
+
 0.1.0 (2023-01-17)
 ------------------
 * remove docker bash script
