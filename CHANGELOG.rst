@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2023-01-17)
+------------------
 * fix some default path for the vosk docker image
 * Contributors: Séverin Lemaignan
 
