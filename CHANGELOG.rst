@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix some default path for the vosk docker image
+* Contributors: Séverin Lemaignan
+
 0.1.1 (2023-01-17)
 ------------------
 * Start/StopASR actions are in hri_actions_msgs
