@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2023-01-17)
+------------------
 * Start/StopASR actions are in hri_actions_msgs
 * Contributors: Séverin Lemaignan
 
