@@ -66,12 +66,9 @@ is called and published the recognized text in ``/humans/voices/anonymous_speake
 
 **ROS actions**
 
-`start_asr` ROS action: type `hri_msgs/StartASR` : starts processing audio captured through the ReSpeaker microphone with Kaldi in a given language
+`start_asr` ROS action: type `hri_actions_msgs/StartASR` : starts processing audio captured through the ReSpeaker microphone with Kaldi in a given language
 
-`stop_asr` ROS action: type `hri_msgs/StopASR`: stops processing audio captured
-
-**Note:** pending to merge branch that includes this actions: https://gitlab/ros4hri/hri_msgs/-/tree/vosk-action/action
-
+`stop_asr` ROS action: type `hri_actions_msgs/StopASR`: stops processing audio captured
 
 
 **Subscribed topics**
@@ -178,7 +175,7 @@ Check [vosk_language_models](https://gitlab/interaction/vosk_language_models) an
 Once we have the desired language models, test it by calling the ROS action of `start_vosk`
 
 ```
-   rostopic pub /start_asr/goal hri_msgs/StartASRActionGoal "header:
+   rostopic pub /start_asr/goal hri_action_msgs/StartASRActionGoal "header:
      seq: 0
      stamp:
        secs: 0
@@ -213,7 +210,7 @@ Try to speak to the robot in spanish and monitor the recognized output:
 Stop the recognizer:
 
 ```
-	rostopic pub /stop_asr/goal hri_msgs/StopASRActionGoal "header:
+	rostopic pub /stop_asr/goal hri_actions_msgs/StopASRActionGoal "header:
 	  seq: 0
 	  stamp:
 	    secs: 0
@@ -238,7 +235,7 @@ to the robot.
 Start Vosk again with a different language and repeat the procedure:
  
 ```
-   rostopic pub /start_vosk/goal hri_msgs/StartASRActionGoal "header:
+   rostopic pub /start_vosk/goal hri_actions_msgs/StartASRActionGoal "header:
      seq: 0
      stamp:
        secs: 0

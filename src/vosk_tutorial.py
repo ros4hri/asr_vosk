@@ -3,8 +3,15 @@
 from __future__ import absolute_import
 import rospy
 import time
+
 # Import required messages
-from hri_msgs.msg import StartASRGoal, StartASRAction, StopASRGoal, StopASRAction, LiveSpeech
+from hri_msgs.msg import LiveSpeech
+from hri_actions_msgs.msg import (
+    StartASRGoal,
+    StartASRAction,
+    StopASRGoal,
+    StopASRAction,
+)
 from actionlib import SimpleActionClient
 from pal_interaction_msgs.msg import TtsAction, TtsGoal
 import actionlib
@@ -17,11 +24,9 @@ from std_msgs.msg import String
 class ASRDemo(object):
     def __init__(self):
         self.asr_sub = rospy.Subscriber(
-            '/humans/voices/anonymous_speaker/speech',
-            LiveSpeech,
-            self.asr_result)
-        self.asr_start_action = SimpleActionClient(
-            "/start_asr", StartASRAction)
+            "/humans/voices/anonymous_speaker/speech", LiveSpeech, self.asr_result
+        )
+        self.asr_start_action = SimpleActionClient("/start_asr", StartASRAction)
         self.asr_stop_action = SimpleActionClient("/stop_asr", StopASRAction)
         self.tts_client = SimpleActionClient("/tts", TtsAction)
         self.language = "en_US"
@@ -41,11 +46,11 @@ class ASRDemo(object):
         # Read speech to text output and trigger different actions accordingly
         sentence = msg.final
         rospy.loginfo("Understood sentence: " + sentence)
-        if (sentence == "what is your name?"):
+        if sentence == "what is your name?":
             self.tts_output("My name is ARI")
-        elif (sentence == "how are you?"):
+        elif sentence == "how are you?":
             self.tts_output("I am feeling great?")
-        elif (sentence == "goodbye"):
+        elif sentence == "goodbye":
             self.tts_output("See you!")
             # Stop listening
             stop_goal = StopVoskGoal()
