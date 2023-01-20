@@ -2,6 +2,14 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* update path to default location for language models
+* remove small en_US model from repo
+  The model is available in package vosk-language-model-en-us-small
+* [doc]
+* Contributors: Séverin Lemaignan
+
 0.1.2 (2023-01-17)
 ------------------
 * fix some default path for the vosk docker image
