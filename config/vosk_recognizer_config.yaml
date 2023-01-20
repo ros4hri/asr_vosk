@@ -1,5 +1,5 @@
 vosk_asr:
   audio_rate: 16000
   default_language: 'en_US'
-  vosk_model_path: '/root/vosk_language_models/'  
+  vosk_model_path: '/opt/pal/gallium/share/vosk_language_models/'  
   
