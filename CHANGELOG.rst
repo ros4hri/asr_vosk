@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.3 (2023-01-20)
+------------------
 * update path to default location for language models
 * remove small en_US model from repo
   The model is available in package vosk-language-model-en-us-small
