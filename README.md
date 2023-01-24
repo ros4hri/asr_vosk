@@ -108,7 +108,13 @@ captured
    `audio_common_msgs/AudioData`: republishes the `/audio/channel0`` processed
    audio topic coming from the ReSpeaker array
 
+** ROS parameters**
 
+- `/vosk_asr/audio_rate` (default: 16000)
+- `/vosk_asr/vosk_model_path` (default:`/opt/pal/gallium/share/vosk_language_models/`)
+- `/vosk_asr/default_language` (default: `en_US`)
+- `/vosk_asr/model_size` (default: look for available ones, starting with the
+  largest available size
 
 
 ## Updating Vosk docker image

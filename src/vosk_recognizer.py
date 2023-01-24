@@ -29,26 +29,29 @@
 
 # Copyright (c) 2021-2022 LuxAI All rights reserved.
 
-import os
+from pathlib import Path
 import queue
 import time
 import rospy
 import json
 import vosk
-from threading import Thread, Condition
+from threading import Thread
 
-from std_msgs.msg import String, Bool
+from std_msgs.msg import Bool
 from audio_common_msgs.msg import AudioData
 from hri_msgs.msg import LiveSpeech
 from hri_actions_msgs.msg import (
-    StartASRGoal,
     StartASRAction,
-    StopASRGoal,
+    StartASRResult,
     StopASRAction,
+    StopASRResult,
 )
 
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 import actionlib
+
+# available Vosk model size, **ordered by preference**
+MODEL_SIZES = ["large", "small"]
 
 
 class VoskSpeech(Thread):
@@ -71,15 +74,26 @@ class VoskSpeech(Thread):
         self.is_kaldi_recognizing = False
         self.audio_data_queue = queue.Queue(maxsize=2000)  # more than one minute
         self.audio_rate = rospy.get_param("/vosk_asr/audio_rate", 16000)
-        self.language = rospy.get_param("/vosk_asr/default_language", "en_US")
+        self.default_language = rospy.get_param("/vosk_asr/default_language", "en_US")
+
+        # if model_size not set, look for available models size, in the order
+        # of preference set in MODEL_SIZES
+        self.model_size = rospy.get_param("/vosk_asr/model_size", None)
+
         self.user_is_speaking = False
-        self.model_path = rospy.get_param(
-            "/vosk_asr/vosk_model_path", "/opt/pal/gallium/share/vosk_language_models/"
+        self.default_dir = Path("/opt/pal/gallium/share/vosk_language_models/")
+        self.model_path = Path(
+            rospy.get_param("/vosk_asr/vosk_model_path", self.default_dir)
         )
-        self.default_dir = "/opt/pal/gallium/share/vosk_language_models/"
         self.user_speaks = Bool()
         self.speech_goal = LiveSpeech()
-        self.model = vosk.Model(self.model_path + self.language + "/small")
+
+        self.model = None
+
+        model_ok = self.load_model(self.default_language, self.model_size)
+        if not model_ok:
+            rospy.signal_shutdown("vosk model not available. Shutting down.")
+
         self.enable_hotword = True
         self.pub_speech = rospy.Publisher(
             "/humans/voices/anonymous_speaker/speech", LiveSpeech, queue_size=10
@@ -105,68 +119,57 @@ class VoskSpeech(Thread):
         rospy.loginfo("ASR Vosk action servers ready")
         self.start()
 
-    def start_recognizing(self, act):
-        rospy.loginfo("Change ASR lang request, to " + act.language)
-        self.listen = True
-        model_name = act.language
-        self.model_path = rospy.get_param(
-            "/vosk_asr/vosk_model_path", "/opt/pal/gallium/share/vosk_language_models/"
-        )
-        result = StartASRResult()
-        result.ready = True
-        if not (os.path.exists(self.model_path + model_name)):
-            for file in os.listdir(self.model_path):
-                main_lang = (act.language).split("_")[0]
-                if main_lang in file:  # if "en" is in subdir "en_GB"
-                    self.model_path = self.model_path + file  # get full path
+    def load_model(self, language, model_size=None):
 
-        else:
-            self.model_path = self.model_path + model_name
-        if os.path.exists(self.model_path + "/large"):  # check if large database exists
-            self.model_path += "/large"
-            self.model = vosk.Model(self.model_path)
-            self.language = act.language
-            rospy.loginfo("started listening in language: " + act.language)
-            self._asr_start_as.set_succeeded(result)
-        elif os.path.exists(self.model_path + "/small"):
-            self.model_path += "/small"
-            self.model = vosk.Model(self.model_path)
-            self.language = act.language
-            rospy.loginfo("started listening in language: " + act.language)
-            self._asr_start_as.set_succeeded(result)
-        else:
-            rospy.loginfo(
-                "Checking in opt/pal/gallium/share/vosk_language_models directory"
+        model_sizes = [model_size] + MODEL_SIZES if model_size else MODEL_SIZES
+
+        model_loaded = False
+
+        if not self.model_path.exists():
+            rospy.logerr("Vosk models path %s does not exists!" % self.model_path)
+            return model_loaded
+
+        model_path = self.model_path / language
+
+        if not model_path.exists():
+            # look for language fallbacks
+            for lang in self.model_path.iterdir():
+                if str(lang.name).split("_")[0] == str(language).split("_")[0]:
+                    rospy.logwarn(
+                        "Desired language <%s> not available. Falling back to variant <%s>"
+                        % (language, lang.name)
+                    )
+                    language = lang
+                    break
+
+        for size in model_sizes:
+
+            model_path = self.model_path / language / size
+            if model_path.exists():
+                if self.model_size and size != self.model_size:
+                    rospy.logwarn(
+                        "Desired model size <%s> not available. Falling back to <%s>"
+                        % (self.model_size, size)
+                    )
+                self.model = vosk.Model(str(model_path))
+                rospy.loginfo("Vosk model loaded: %s" % model_path)
+                model_loaded = True
+
+        if not model_loaded:
+            rospy.logerr(
+                "Vosk model not found! I was looking for one of %s in %s"
+                % (model_sizes, self.model_path / language)
             )
-            if not (os.path.exists(self.default_dir + model_name)):
-                for file in os.listdir(self.default_dir):
-                    main_lang = (act.language).split("_")[0]
-                    if main_lang in file:  # if "en" is in subdir "en_GB"
-                        self.default_dir = self.default_dir + file  # get full path
-            else:
-                self.default_dir = self.default_dir + model_name
-                rospy.loginfo("model found")
 
-            if os.path.exists(
-                self.default_dir + "/large"
-            ):  # check if large database exists
-                self.default_dir += "/large"
-                self.model = vosk.Model(self.default_dir)
-                self.language = act.language
-                rospy.loginfo("started listening in language: " + act.language)
-                self._asr_start_as.set_succeeded(result)
+        return model_loaded
 
-            elif os.path.exists(self.default_dir + "/small"):
-                self.default_dir += "/small"
-                self.model = vosk.Model(self.default_dir)
-                self.language = act.language
-                rospy.loginfo("started listening in language: " + act.language)
-                self._asr_start_as.set_succeeded(result)
+    def start_recognizing(self, act):
+        rospy.loginfo("Change ASR lang request to " + act.language)
+        self.listen = True
 
-            else:
-                rospy.logerr("no available language")
-                result.ready = False
-                self._asr_start_as.set_succeeded(result)
+        result = StartASRResult()
+        result.ready = self.load_model(act.language)
+        self._asr_start_as.set_succeeded(result)
 
     def stop_recognizing(self, act):
         self.listen = False
