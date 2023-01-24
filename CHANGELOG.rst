@@ -2,6 +2,14 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* refactor model loading
+  - improved model size selection (added ROS param)
+  - improved fallback mechanisms
+  - use pathlib instead of os.path
+* Contributors: Séverin Lemaignan
+
 0.1.3 (2023-01-20)
 ------------------
 * update path to default location for language models
