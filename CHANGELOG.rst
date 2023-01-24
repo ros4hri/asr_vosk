@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.4 (2023-01-24)
+------------------
 * refactor model loading
   - improved model size selection (added ROS param)
   - improved fallback mechanisms
