@@ -165,17 +165,19 @@ class VoskSpeech(Thread):
 
     def start_recognizing(self, act):
         rospy.loginfo("Change ASR lang request to " + act.language)
-        self.listen = True
 
         result = StartASRResult()
         result.ready = self.load_model(act.language)
         self._asr_start_as.set_succeeded(result)
 
+        rospy.loginfo("Language model loaded, starting speech recognition.")
+        self.listen = True
+
     def stop_recognizing(self, act):
+        rospy.loginfo("Stopping speech recognition.")
         self.listen = False
         result = StopASRResult()
         result.ready = True
-        rospy.loginfo("stopping listening")
         self._asr_stop_as.set_succeeded(result)
 
     def tts_start(self, msg):
@@ -193,8 +195,10 @@ class VoskSpeech(Thread):
             if rospy.is_shutdown():
                 break
             if self.listen == True:  # only process if listen is set to true
-                transcript = self.recognize_kaldi(10, [], clear_queue=True)
-                rospy.logdebug(transcript)
+                transcript = self.recognize_kaldi(
+                    timeout=10, options=[], clear_queue=True
+                )
+                rospy.loginfo("Recognised text: <%s>" % transcript)
                 if transcript:
                     self.speech_goal.incremental = transcript
                     self.speech_goal.final = transcript
@@ -272,9 +276,12 @@ class VoskSpeech(Thread):
 
         t_start = time.time()
         rec.SetWords(True)
+
         # rec.SetPartialWords(True)
         transcript = ""
+
         self.speech_audio = LiveSpeech()
+
         while not (self.robot_speaking and self.listen == True):
             data = self.audio_data_queue.get()
 
