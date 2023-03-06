@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.6 (2023-03-06)
+------------------
 * {->audio}/voice_detected
 * Contributors: Séverin Lemaignan
 
