@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* {->audio}/voice_detected
+* Contributors: Séverin Lemaignan
+
 0.1.5 (2023-03-06)
 ------------------
 * minor: code readability
