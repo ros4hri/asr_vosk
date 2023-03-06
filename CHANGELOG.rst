@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.7 (2023-03-06)
+------------------
 * do not spam the console when no text is recognised
 * Contributors: Séverin Lemaignan
 
