@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* do not spam the console when no text is recognised
+* Contributors: Séverin Lemaignan
+
 0.1.6 (2023-03-06)
 ------------------
 * {->audio}/voice_detected
