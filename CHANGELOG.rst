@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.5 (2023-03-06)
+------------------
 * minor: code readability
 * VAD now published on /voice_detected instead of /is_speeching
 * Contributors: Séverin Lemaignan
