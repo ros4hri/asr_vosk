@@ -198,8 +198,8 @@ class VoskSpeech(Thread):
                 transcript = self.recognize_kaldi(
                     timeout=10, options=[], clear_queue=True
                 )
-                rospy.loginfo("Recognised text: <%s>" % transcript)
                 if transcript:
+                    rospy.loginfo("Recognised text: <%s>" % transcript)
                     self.speech_goal.incremental = transcript
                     self.speech_goal.final = transcript
                     if (not self.robot_speaking) and (
