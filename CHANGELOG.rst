@@ -2,6 +2,13 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* immediately start listening
+  before, /start_asr/goal had to be called first
+  While here, minor code improvmeent
+* Contributors: Séverin Lemaignan
+
 0.1.7 (2023-03-06)
 ------------------
 * do not spam the console when no text is recognised
