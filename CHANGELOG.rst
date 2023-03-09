@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.8 (2023-03-09)
+------------------
 * immediately start listening
   before, /start_asr/goal had to be called first
   While here, minor code improvmeent
