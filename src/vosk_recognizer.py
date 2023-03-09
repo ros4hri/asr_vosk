@@ -117,6 +117,9 @@ class VoskSpeech(Thread):
         self._asr_start_as.start()
         self._asr_stop_as.start()
         rospy.loginfo("ASR Vosk action servers ready")
+
+        # immediately start recognising speech
+        self.listen = True
         self.start()
 
     def load_model(self, language, model_size=None):
@@ -192,21 +195,28 @@ class VoskSpeech(Thread):
         """
         rospy.loginfo("started vosk")
         while not rospy.is_shutdown():
+
             if rospy.is_shutdown():
                 break
-            if self.listen == True:  # only process if listen is set to true
+
+            if self.listen:  # only process if listen is set to true
                 transcript = self.recognize_kaldi(
                     timeout=10, options=[], clear_queue=True
-                )
+                ).strip()
+
                 if transcript:
-                    rospy.loginfo("Recognised text: <%s>" % transcript)
+
+                    rospy.loginfo('VOSK recognised text "%s"' % transcript)
+
                     self.speech_goal.incremental = transcript
                     self.speech_goal.final = transcript
+
                     if (not self.robot_speaking) and (
                         len(self.speech_goal.incremental) != 0
                     ):
                         self.pub_speech.publish(self.speech_goal)
                         rospy.loginfo(self.speech_goal)
+
             # rospy.loginfo("preempt called")
 
     def user_speaking(self, speech):
@@ -282,7 +292,7 @@ class VoskSpeech(Thread):
 
         self.speech_audio = LiveSpeech()
 
-        while not (self.robot_speaking and self.listen == True):
+        while not (self.robot_speaking and self.listen):
             data = self.audio_data_queue.get()
 
             if rec.AcceptWaveform(data):
@@ -306,10 +316,12 @@ class VoskSpeech(Thread):
                 if word:
                     transcript = word
                     break
+
             # check the timeout
-            if ((time.time() - t_start) > timeout) or (self.user_is_speaking == False):
+            if ((time.time() - t_start) > timeout) or not self.user_is_speaking:
                 transcript = ""
                 break
+
         self.user_is_speaking = False
         self.is_kaldi_recognizing = False
         return transcript
