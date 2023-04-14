@@ -2,6 +2,12 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* do not explicitely set the default language in launch file
+  -> otherwise, impossible to set the value to a different default, eg for a specific customer
+* Contributors: Séverin Lemaignan
+
 0.1.9 (2023-04-14)
 ------------------
 * publish /humans/voices/tracked + minor cleanup
