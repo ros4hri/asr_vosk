@@ -39,7 +39,7 @@ from threading import Thread
 
 from std_msgs.msg import Bool
 from audio_common_msgs.msg import AudioData
-from hri_msgs.msg import LiveSpeech
+from hri_msgs.msg import IdsList, LiveSpeech
 from hri_actions_msgs.msg import (
     StartASRAction,
     StartASRResult,
@@ -80,12 +80,10 @@ class VoskSpeech(Thread):
         # of preference set in MODEL_SIZES
         self.model_size = rospy.get_param("/vosk_asr/model_size", None)
 
-        self.user_is_speaking = False
         self.default_dir = Path("/opt/pal/gallium/share/vosk_language_models/")
         self.model_path = Path(
             rospy.get_param("/vosk_asr/vosk_model_path", self.default_dir)
         )
-        self.user_speaks = Bool()
         self.speech_goal = LiveSpeech()
 
         self.model = None
@@ -95,6 +93,11 @@ class VoskSpeech(Thread):
             rospy.signal_shutdown("vosk model not available. Shutting down.")
 
         self.enable_hotword = True
+
+        self.pub_voices = rospy.Publisher(
+            "/humans/voices/tracked", IdsList, queue_size=1
+        )
+
         self.pub_speech = rospy.Publisher(
             "/humans/voices/anonymous_speaker/speech", LiveSpeech, queue_size=10
         )
@@ -105,7 +108,7 @@ class VoskSpeech(Thread):
             "/humans/voices/anonymous_speaker/is_speaking", Bool, queue_size=10
         )
         rospy.Subscriber("/audio/channel0", AudioData, self.callback_audio_stream)
-        rospy.Subscriber("/audio/voice_detected", Bool, self.user_speaking)
+        rospy.Subscriber("/audio/voice_detected", Bool, self.on_voice_detected)
         rospy.Subscriber("/tts/goal", TtsActionGoal, self.tts_start)
         rospy.Subscriber("/tts/result", TtsActionResult, self.tts_end)
         self.cout_speaking = 0
@@ -219,23 +222,15 @@ class VoskSpeech(Thread):
 
             # rospy.loginfo("preempt called")
 
-    def user_speaking(self, speech):
-        if speech.data:
-            self.user_is_speaking = True
-        if self.user_is_speaking:
-            if (not speech.data) and (
-                self.cout_is_speak < self.max_no_voice
-            ):  # 6 continuous no speaking
-                self.cout_is_speak += 1
-            elif speech.data:
-                self.cout_is_speak = (
-                    0  # restart counter if again a speech detected is seen
-                )
-            else:
-                self.user_is_speaking = False
+    def on_voice_detected(self, speech):
+
+        if speech.data != self.user_is_speaking:
+            self.user_is_speaking = speech.data
+            if not self.user_is_speaking:
                 self.speech_goal = LiveSpeech()
-        self.user_speaks.data = self.user_is_speaking
-        self.pub_is_speaking.publish(self.user_speaks)
+
+            self.pub_voices.publish(IdsList(ids=["anonymous_speaker"]))
+            self.pub_is_speaking.publish(Bool(data=self.user_is_speaking))
 
     def callback_audio_stream(self, msg):
         indata = bytes(msg.data)
@@ -305,7 +300,6 @@ class VoskSpeech(Thread):
                 result = rec.PartialResult()
                 jres = json.loads(result)
                 partial = jres["partial"]
-                self.user_speaks.data = True
 
                 if (partial != self.speech_goal.incremental) and (partial != ""):
 
