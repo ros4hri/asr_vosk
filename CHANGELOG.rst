@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* publish /humans/voices/tracked + minor cleanup
+* Contributors: Séverin Lemaignan
+
 0.1.8 (2023-03-09)
 ------------------
 * immediately start listening
