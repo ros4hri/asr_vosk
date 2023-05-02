@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.11 (2023-05-02)
+-------------------
 * publish final ASR result when speaker stops speaking
 * Contributors: Séverin Lemaignan
 
