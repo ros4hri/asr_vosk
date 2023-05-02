@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* publish final ASR result when speaker stops speaking
+* Contributors: Séverin Lemaignan
+
 0.1.10 (2023-04-14)
 -------------------
 * do not explicitely set the default language in launch file
