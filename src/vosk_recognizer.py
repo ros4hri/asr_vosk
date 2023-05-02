@@ -306,6 +306,8 @@ class VoskSpeech(Thread):
                     self.speech_goal.incremental = partial
                     self.speech_goal.final = ""
                     self.pub_speech.publish(self.speech_goal)
+                    transcript = partial
+
                 word = self.contains_options(options, partial)
                 if word:
                     transcript = word
@@ -313,7 +315,6 @@ class VoskSpeech(Thread):
 
             # check the timeout
             if ((time.time() - t_start) > timeout) or not self.user_is_speaking:
-                transcript = ""
                 break
 
         self.user_is_speaking = False
