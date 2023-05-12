@@ -20,6 +20,7 @@ catkin_package(
 catkin_generate_virtualenv(
     INPUT_REQUIREMENTS requirements.in
     PYTHON_INTERPRETER python3
+    CHECK_VENV ${CATKIN_ENABLE_TESTING} # workaround for https://github.com/locusrobotics/catkin_virtualenv/pull/89
     )
 
 catkin_install_python(PROGRAMS src/vosk_recognizer.py src/vosk_tutorial.py
