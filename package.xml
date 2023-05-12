@@ -3,13 +3,16 @@
   <name>vosk_asr</name>
   <version>0.1.11</version>
   <description>The vosk_asr package</description>
-  <maintainer email="sara.cooper@pal-robotics.com">Sara Cooper</maintainer>
+  <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
 
+  <author email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</author>
+  <author email="sara.cooper@pal-robotics.com">Sara Cooper</author>
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>LuxAI S.A.</license>
+
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
   <buildtool_depend>catkin</buildtool_depend>
@@ -20,7 +23,9 @@
   <depend>hri_actions_msgs</depend>
   <depend>pal_interaction_msgs</depend>
 
+  <depend>catkin_virtualenv</depend>
+
   <export>
-    
+    <pip_requirements>requirements.txt</pip_requirements>
   </export>
 </package>
