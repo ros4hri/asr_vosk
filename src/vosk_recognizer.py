@@ -116,14 +116,19 @@ class VoskSpeech(Thread):
         self.user_is_speaking = False
         self.robot_speaking = False
         # start the background thread
-        self.listen = False
         self._asr_start_as.start()
         self._asr_stop_as.start()
         rospy.loginfo("ASR Vosk action servers ready")
 
         # immediately start recognising speech
         self.listen = True
+
+        self.running = True
         self.start()
+
+    def stop(self):
+        rospy.loginfo("Stopping vosk thread...")
+        self.running = False
 
     def load_model(self, language, model_size=None):
 
@@ -197,10 +202,8 @@ class VoskSpeech(Thread):
         background thread which waits for any speech detection and processes it with Kaldi
         """
         rospy.loginfo("started vosk")
-        while not rospy.is_shutdown():
 
-            if rospy.is_shutdown():
-                break
+        while self.running:
 
             if self.listen:  # only process if listen is set to true
                 transcript = self.recognize_kaldi(
@@ -219,6 +222,9 @@ class VoskSpeech(Thread):
                     ):
                         self.pub_speech.publish(self.speech_goal)
                         rospy.loginfo(self.speech_goal)
+
+            else:
+                time.sleep(0.01)
 
             # rospy.loginfo("preempt called")
 
@@ -263,6 +269,12 @@ class VoskSpeech(Thread):
         return None
 
     def recognize_kaldi(self, timeout, options, clear_queue=False):
+
+        if self.audio_data_queue.empty():
+            # no data yet? sleep a tiny bit (to avoid a busy wait) and return
+            time.sleep(0.01)
+            return ""
+
         self.is_kaldi_recognizing = True
         if clear_queue:
             # example : if audio rate is 16000 and respeaker buffersize is 512,
@@ -280,9 +292,10 @@ class VoskSpeech(Thread):
             rec = vosk.KaldiRecognizer(self.model, self.audio_rate)
 
         t_start = time.time()
-        rec.SetWords(True)
 
+        # rec.SetWords(True)
         # rec.SetPartialWords(True)
+
         transcript = ""
 
         self.speech_audio = LiveSpeech()
@@ -327,4 +340,6 @@ if __name__ == "__main__":
     speech = VoskSpeech()
     rospy.loginfo("vosk_recognizer is ready!")
     rospy.spin()
+    speech.stop()
+    speech.join()
     rospy.loginfo("vosk_recognizer shutdown")
