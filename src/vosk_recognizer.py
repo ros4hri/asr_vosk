@@ -41,12 +41,7 @@ from threading import Thread
 from std_msgs.msg import Bool
 from audio_common_msgs.msg import AudioData
 from hri_msgs.msg import IdsList, LiveSpeech
-from hri_actions_msgs.msg import (
-    StartASRAction,
-    StartASRResult,
-    StopASRAction,
-    StopASRResult,
-)
+
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
@@ -67,18 +62,6 @@ class VoskSpeech(Thread):
 
         self.diag_pub = rospy.Publisher("/diagnostics", DiagnosticArray, queue_size=1)
 
-        self._asr_start_as = actionlib.SimpleActionServer(
-            "start_asr",
-            StartASRAction,
-            execute_cb=self.start_recognizing,
-            auto_start=False,
-        )
-        self._asr_stop_as = actionlib.SimpleActionServer(
-            "stop_asr",
-            StopASRAction,
-            execute_cb=self.stop_recognizing,
-            auto_start=False,
-        )
         self.is_kaldi_recognizing = False
         self.audio_data_queue = queue.Queue(maxsize=2000)  # more than one minute
         self.audio_rate = rospy.get_param("/vosk_asr/audio_rate", 16000)
@@ -106,7 +89,7 @@ class VoskSpeech(Thread):
                 )
             except rospkg.common.ResourceNotFound:
                 rospy.logfatal(
-                    "Can not find the VOSK language models! the "
+                    "Can not find the Vosk language models! the "
                     "vosk_language_models ROS package is not installed, and "
                     "parameter /vosk_asr/vosk_model_path is not provided."
                 )
@@ -145,9 +128,6 @@ class VoskSpeech(Thread):
         self.max_no_voice = 1
         self.user_is_speaking = False
         self.robot_speaking = False
-        # start the background thread
-        self._asr_start_as.start()
-        self._asr_stop_as.start()
 
         self._set_locale_as.start()
 
@@ -155,14 +135,14 @@ class VoskSpeech(Thread):
 
         # immediately start recognising speech
         self.listen = True
-
         rospy.Timer(rospy.Duration(1), self.publish_diagnostics)
 
+        # start the background thread
         self.running = True
         self.start()
 
     def stop(self):
-        rospy.loginfo("Stopping vosk thread...")
+        rospy.loginfo("Stopping Vosk thread...")
         self.running = False
 
     def load_model(self, language, model_size=None):
@@ -214,23 +194,6 @@ class VoskSpeech(Thread):
 
         return model_loaded, msg
 
-    def start_recognizing(self, act):
-        rospy.loginfo("Change ASR lang request to " + act.language)
-
-        result = StartASRResult()
-        result.ready, _ = self.load_model(act.language)
-        self._asr_start_as.set_succeeded(result)
-
-        rospy.loginfo("Language model loaded, starting speech recognition.")
-        self.listen = True
-
-    def stop_recognizing(self, act):
-        rospy.loginfo("Stopping speech recognition.")
-        self.listen = False
-        result = StopASRResult()
-        result.ready = True
-        self._asr_stop_as.set_succeeded(result)
-
     def set_locale(self, act):
         rospy.loginfo("Changing ASR language to %s..." % act.locale)
         self.listen = False
@@ -256,7 +219,7 @@ class VoskSpeech(Thread):
         """
         background thread which waits for any speech detection and processes it with Kaldi
         """
-        rospy.loginfo("started vosk")
+        rospy.loginfo("started Vosk")
 
         while self.running:
 
@@ -267,7 +230,7 @@ class VoskSpeech(Thread):
 
                 if transcript:
 
-                    rospy.loginfo('VOSK recognised text "%s"' % transcript)
+                    rospy.loginfo('Vosk recognised text "%s"' % transcript)
 
                     self.speech_goal.incremental = transcript
                     self.speech_goal.final = transcript
