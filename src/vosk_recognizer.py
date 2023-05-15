@@ -30,9 +30,11 @@
 # Copyright (c) 2021-2022 LuxAI All rights reserved.
 
 from pathlib import Path
+import sys
 import queue
 import time
 import rospy
+import rospkg
 import json
 import vosk
 from threading import Thread
@@ -55,7 +57,7 @@ MODEL_SIZES = ["large", "small"]
 
 
 class VoskSpeech(Thread):
-    """Vosk speech rcognition"""
+    """Vosk speech recognition"""
 
     def __init__(self):
         super(VoskSpeech, self).__init__()
@@ -80,10 +82,24 @@ class VoskSpeech(Thread):
         # of preference set in MODEL_SIZES
         self.model_size = rospy.get_param("/vosk_asr/model_size", None)
 
-        self.default_dir = Path("/opt/pal/gallium/share/vosk_language_models/")
-        self.model_path = Path(
-            rospy.get_param("/vosk_asr/vosk_model_path", self.default_dir)
-        )
+        model_path_param = rospy.get_param("/vosk_asr/vosk_model_path", "")
+
+        if model_path_param:
+            self.model_path = Path(model_path_param)
+        else:
+            try:
+                self.model_path = Path(
+                    rospkg.RosPack().get_path("vosk_language_models")
+                )
+            except rospkg.common.ResourceNotFound:
+                rospy.logfatal(
+                    "Can not find the VOSK language models! the "
+                    "vosk_language_models ROS package is not installed, and "
+                    "parameter /vosk_asr/vosk_model_path is not provided."
+                )
+                rospy.signal_shutdown("vosk models path not found. Shutting down.")
+                return
+
         self.speech_goal = LiveSpeech()
 
         self.model = None
@@ -91,6 +107,7 @@ class VoskSpeech(Thread):
         model_ok = self.load_model(self.default_language, self.model_size)
         if not model_ok:
             rospy.signal_shutdown("vosk model not available. Shutting down.")
+            return
 
         self.enable_hotword = True
 
@@ -338,8 +355,9 @@ class VoskSpeech(Thread):
 if __name__ == "__main__":
     rospy.init_node("vosk_recognizer")
     speech = VoskSpeech()
-    rospy.loginfo("vosk_recognizer is ready!")
-    rospy.spin()
-    speech.stop()
-    speech.join()
-    rospy.loginfo("vosk_recognizer shutdown")
+    if speech.is_alive():
+        rospy.loginfo("vosk_recognizer is ready!")
+        rospy.spin()
+        speech.stop()
+        speech.join()
+        rospy.loginfo("vosk_recognizer shutdown")
