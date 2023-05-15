@@ -2,6 +2,14 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add CMake workaround to support pal_deploy with catkin-venv
+* workaround https://github.com/locusrobotics/catkin_virtualenv/pull/89
+* use catkin venv to add a dependency on vosk pip
+* cleanly stop the node, even when no audio is published + avoid busy waits
+* Contributors: Séverin Lemaignan
+
 0.1.11 (2023-05-02)
 -------------------
 * publish final ASR result when speaker stops speaking
