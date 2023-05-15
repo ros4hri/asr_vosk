@@ -30,7 +30,6 @@
 # Copyright (c) 2021-2022 LuxAI All rights reserved.
 
 from pathlib import Path
-import sys
 import queue
 import time
 import rospy
@@ -48,6 +47,7 @@ from hri_actions_msgs.msg import (
     StopASRAction,
     StopASRResult,
 )
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
 import actionlib
@@ -59,8 +59,13 @@ MODEL_SIZES = ["large", "small"]
 class VoskSpeech(Thread):
     """Vosk speech recognition"""
 
+    DIAGNOSTICS_BASENAME = "Interaction: Speech recognition"
+
     def __init__(self):
         super(VoskSpeech, self).__init__()
+
+        self.diag_pub = rospy.Publisher("/diagnostics", DiagnosticArray, queue_size=1)
+
         self._asr_start_as = actionlib.SimpleActionServer(
             "start_asr",
             StartASRAction,
@@ -139,6 +144,8 @@ class VoskSpeech(Thread):
 
         # immediately start recognising speech
         self.listen = True
+
+        rospy.Timer(rospy.Duration(1), self.publish_diagnostics)
 
         self.running = True
         self.start()
@@ -350,6 +357,24 @@ class VoskSpeech(Thread):
         self.user_is_speaking = False
         self.is_kaldi_recognizing = False
         return transcript
+
+    def publish_diagnostics(self, evt):
+
+        arr = DiagnosticArray()
+
+        msg = DiagnosticStatus(
+            level=DiagnosticStatus.OK,
+            name=self.DIAGNOSTICS_BASENAME,
+            message="vosk ASR running",
+            values=[
+                KeyValue(key="Package name", value="vosk_asr"),
+                KeyValue(key="Last recognised sentence", value=self.speech_goal.final),
+            ],
+        )
+
+        arr.header.stamp = rospy.Time.now()
+        arr.status = [msg]
+        self.diag_pub.publish(arr)
 
 
 if __name__ == "__main__":
