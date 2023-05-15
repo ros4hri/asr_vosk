@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.0 (2023-05-15)
+------------------
 * add CMake workaround to support pal_deploy with catkin-venv
 * workaround https://github.com/locusrobotics/catkin_virtualenv/pull/89
 * use catkin venv to add a dependency on vosk pip
