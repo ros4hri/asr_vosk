@@ -50,6 +50,7 @@ from hri_actions_msgs.msg import (
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
+from language_center_msgs.msg import SetLocaleResult, SetLocaleAction
 import actionlib
 
 # available Vosk model size, **ordered by preference**
@@ -83,6 +84,13 @@ class VoskSpeech(Thread):
         self.audio_rate = rospy.get_param("/vosk_asr/audio_rate", 16000)
         self.default_language = rospy.get_param("/vosk_asr/default_language", "en_US")
 
+        self._set_locale_as = actionlib.SimpleActionServer(
+            "/asr/set_locale",
+            SetLocaleAction,
+            execute_cb=self.set_locale,
+            auto_start=False,
+        )
+
         # if model_size not set, look for available models size, in the order
         # of preference set in MODEL_SIZES
         self.model_size = rospy.get_param("/vosk_asr/model_size", None)
@@ -109,7 +117,7 @@ class VoskSpeech(Thread):
 
         self.model = None
 
-        model_ok = self.load_model(self.default_language, self.model_size)
+        model_ok, _ = self.load_model(self.default_language, self.model_size)
         if not model_ok:
             rospy.signal_shutdown("vosk model not available. Shutting down.")
             return
@@ -140,6 +148,9 @@ class VoskSpeech(Thread):
         # start the background thread
         self._asr_start_as.start()
         self._asr_stop_as.start()
+
+        self._set_locale_as.start()
+
         rospy.loginfo("ASR Vosk action servers ready")
 
         # immediately start recognising speech
@@ -159,10 +170,12 @@ class VoskSpeech(Thread):
         model_sizes = [model_size] + MODEL_SIZES if model_size else MODEL_SIZES
 
         model_loaded = False
+        msg = ""
 
         if not self.model_path.exists():
-            rospy.logerr("Vosk models path %s does not exists!" % self.model_path)
-            return model_loaded
+            msg = "Vosk models path %s does not exists" % self.model_path
+            rospy.logerr(msg)
+            return model_loaded, msg
 
         model_path = self.model_path / language
 
@@ -187,22 +200,25 @@ class VoskSpeech(Thread):
                         % (self.model_size, size)
                     )
                 self.model = vosk.Model(str(model_path))
-                rospy.loginfo("Vosk model loaded: %s" % model_path)
+
+                msg = "Vosk model loaded: %s" % model_path
+                rospy.loginfo(msg)
                 model_loaded = True
 
         if not model_loaded:
-            rospy.logerr(
-                "Vosk model not found! I was looking for one of %s in %s"
-                % (model_sizes, self.model_path / language)
+            msg = "Vosk model not found! I was looking for one of %s in %s" % (
+                model_sizes,
+                self.model_path / language,
             )
+            rospy.logerr(msg)
 
-        return model_loaded
+        return model_loaded, msg
 
     def start_recognizing(self, act):
         rospy.loginfo("Change ASR lang request to " + act.language)
 
         result = StartASRResult()
-        result.ready = self.load_model(act.language)
+        result.ready, _ = self.load_model(act.language)
         self._asr_start_as.set_succeeded(result)
 
         rospy.loginfo("Language model loaded, starting speech recognition.")
@@ -214,6 +230,21 @@ class VoskSpeech(Thread):
         result = StopASRResult()
         result.ready = True
         self._asr_stop_as.set_succeeded(result)
+
+    def set_locale(self, act):
+        rospy.loginfo("Changing ASR language to %s..." % act.locale)
+        self.listen = False
+
+        result = SetLocaleResult()
+
+        ok, msg = self.load_model(act.locale)
+        result.ok = ok
+        result.error_msg = msg
+
+        self._set_locale_as.set_succeeded(result)
+
+        rospy.loginfo("Language model loaded, starting speech recognition.")
+        self.listen = True
 
     def tts_start(self, msg):
         self.robot_speaking = True

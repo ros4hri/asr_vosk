@@ -22,6 +22,7 @@
   <depend>hri_msgs</depend>
   <depend>hri_actions_msgs</depend>
   <depend>pal_interaction_msgs</depend>
+  <depend>language_center_msgs</depend>
 
   <depend>catkin_virtualenv</depend>
 

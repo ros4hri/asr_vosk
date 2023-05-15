@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.0.2)
 project(vosk_asr)
 
 find_package(catkin REQUIRED COMPONENTS
+  catkin_virtualenv
   rospy
   std_msgs
   hri_msgs
   hri_actions_msgs
   message_generation
   pal_interaction_msgs
-  catkin_virtualenv
+  language_center_msgs
 )
 
 
