@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.1 (2023-05-16)
+------------------
 * remove un-needed catkin deps + update vosk to latest
 * remove actions start_asr/stop_asr
   To start or stop the ASR, better to pal-start or pal-stop the startup
