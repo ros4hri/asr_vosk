@@ -2,6 +2,17 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* remove un-needed catkin deps + update vosk to latest
+* remove actions start_asr/stop_asr
+  To start or stop the ASR, better to pal-start or pal-stop the startup
+* add action /asr/set_locale
+* publish diagnostics
+* do not hard-code vosk_language_models path
+  While here, better handle errors during initialization
+* Contributors: Séverin Lemaignan
+
 0.2.0 (2023-05-15)
 ------------------
 * add CMake workaround to support pal_deploy with catkin-venv
