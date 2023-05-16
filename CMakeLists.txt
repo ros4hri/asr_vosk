@@ -1,21 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(vosk_asr)
 
-find_package(catkin REQUIRED COMPONENTS
-  catkin_virtualenv
-  rospy
-  std_msgs
-  hri_msgs
-  hri_actions_msgs
-  message_generation
-  pal_interaction_msgs
-  language_center_msgs
-)
+find_package(catkin REQUIRED COMPONENTS catkin_virtualenv)
 
-
-catkin_package(
-   CATKIN_DEPENDS rospy std_msgs message_runtime hri_msgs hri_actions_msgs pal_interaction_msgs
-)
+catkin_package()
 
 # Generate the virtualenv to install the vosk library
 catkin_generate_virtualenv(
