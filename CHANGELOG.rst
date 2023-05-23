@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.2 (2023-05-23)
+------------------
 * {language_center_msgs -> i18n_msgs}
 * Contributors: Séverin Lemaignan
 
