@@ -45,7 +45,7 @@ from hri_msgs.msg import IdsList, LiveSpeech
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 
 from pal_interaction_msgs.msg import TtsActionGoal, TtsActionResult
-from language_center_msgs.msg import SetLocaleResult, SetLocaleAction
+from i18n_msgs.msg import SetLocaleResult, SetLocaleAction
 import actionlib
 
 # available Vosk model size, **ordered by preference**
