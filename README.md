@@ -2,21 +2,12 @@
 
 
 This repository is a PAL wrapper of offline Speech Recognition model
-[Vosk](https://alphacephei.com/vosk/). It is based and shares license of example
+[Vosk](https://alphacephei.com/vosk/). It is originally based and shares license of example
 taken from QTRobot (pending license approval), with quite a few adjustments to
 suit our robots in any case. 
 
 (source code:
 https://github.com/luxai-qtrobot/software/blob/master/apps/qt_vosk_app/src/qt_vosk_app_node.py#L144)
-
-At the moment this package is run from inside a docker image, see
-[pal_docker_vosk](https://gitlab/Dockers/pal_docker_vosk) for more details on
-how it is run. Reason: it is complicated to create a debian of the Vosk python
-library, see Dockerfile for related dependencies. 
-
-This README will focus on the ROS interfaces in case it needs to be changed in
-the future.
-
 
 
 ## Vosk configuration files
@@ -25,51 +16,31 @@ You can include or edit the Vosk configuration file stored in
 `/opt/pal/gallium/share/vosk_asr/vosk_recognizer_config.yaml`. It should look like
 [vosk_recognizer_config.yaml](https://gitlab/interaction/vosk_asr/-/blob/main/config/vosk_recognizer_config.yaml).
 
-You can change the default language:
-
-```
-vosk_asr:
-  audio_rate: 16000
-  default_language: 'en_US' #option to change the default language
-  vosk_model_path: '/root/vosk_language_models/'  
-```
-
-The language must exist, for instance, for English, in
-`/root/vosk_language_models/en`.  This directory is mapped inside
-the Vosk docker when the main executable is run:
-
-`rosrun pal_docker_vosk start`
-
-Specifically, this script start DOcker with the following command-line:
-
-```
-docker run --device /dev/snd:/dev/snd -v /etc/resolv.conf:/etc/resolv.conf  -v /opt/pal/gallium/share/vosk_language_models/:/root/vosk_language_models --net=host --env ROS_MASTER_URI --privileged $DOCKER_NAME:latest
-```
-
 ## ROS interfaces
 
 The Vosk node provides the following ROS interfaces. It subscribes to the
-processed channel 0 `/audio/channel0` input from the ReSpeaker microphone and,
-when the `start_asr` ROS action is called with the indicating language, it looks
-for the respective language model. For example, if the language is *en_GB*, it
+processed channel 0 `/audio/channel0` input from the ReSpeaker microphone and looks
+for the currently active language model.
+
+For example, if the language is *en_GB*, it
 searches in the following order, always prioritizing large models. Note that if
 for instance *en_GB* does not exist, it will then check for *en_XXX*, such as
 *en_US*. 
 
-- `/opt/pal/gallium/share/vosk_language_models/en_GB/large/`
-
 - `/opt/pal/gallium/share/vosk_language_models/en_GB/small/`
+- `/opt/pal/gallium/share/vosk_language_models/en_GB/large/`
+- `/opt/pal/gallium/share/vosk_language_models/en_US/small/`
+- ...
 
-- `/opt/pal/gallium/share/vosk_language_models/en_US/large/`
-
-- `/opt/pal/gallium/share/vosk_language_models/en_US/large/`
 
 If no language exists, it will select the default language that is installed on
 the robot, which is the small *en_US* model.
 
-Once the language is selected, it will start processing the audio with Kaldi
-until the `stop_asr` ROS action is called and published the recognized text in
-``/humans/voices/anonymous_speaker/speech``. 
+You can change the current active language with the ROS action
+`/asr/set_locale`.
+
+
+Recognised text is published on `/humans/voices/anonymous_speaker/speech`. 
 
 
 
@@ -108,7 +79,7 @@ captured
    `audio_common_msgs/AudioData`: republishes the `/audio/channel0`` processed
    audio topic coming from the ReSpeaker array
 
-** ROS parameters**
+**ROS parameters**
 
 - `/vosk_asr/audio_rate` (default: 16000)
 - `/vosk_asr/vosk_model_path` (default:`/opt/pal/gallium/share/vosk_language_models/`)
@@ -116,18 +87,10 @@ captured
 - `/vosk_asr/model_size` (default: look for available ones, starting with the
   largest available size
 
-
-## Updating Vosk docker image
-
-
-If any change is done to the `vosk_asr` package, you will need to rebuild the
-docker image. To do so, simply rebuild the `pal_docker_vosk` package with
-`catkin`.
-
 ## Adding a new Vosk language
 
 The robot comes by default with the English language model, that is installed in
-``/opt/pal/gallium/share/vosk_language_models/``, in addition to other languages
+`/opt/pal/gallium/share/vosk_language_models/`, in addition to other languages
 that were requested when buying the robot.  Models come from  Vosk language
 models <https://alphacephei.com/vosk/models>`_ and may be small or large models.
 
