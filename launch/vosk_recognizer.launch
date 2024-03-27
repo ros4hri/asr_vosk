@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-
-<launch>
-  <rosparam file="$(find vosk_asr)/config/vosk_recognizer_config.yaml" command="load"/>
-  <node pkg="vosk_asr" name="vosk_recognizer" type="vosk_recognizer.py"
-        output="screen" clear_params="true" respawn="true">
-  </node>
-</launch>

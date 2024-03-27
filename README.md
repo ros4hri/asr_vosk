@@ -1,251 +1,81 @@
-# Vosk speech recognition using ROS audio
+# asr_vosk
 
+This repository is a PAL wrapper of offline Speech Recognition model [Vosk](https://alphacephei.com/vosk/).
 
-This repository is a PAL wrapper of offline Speech Recognition model
-[Vosk](https://alphacephei.com/vosk/). It is originally based and shares license of example
-taken from QTRobot (pending license approval), with quite a few adjustments to
-suit our robots in any case. 
+## Preparation
 
-(source code:
-https://github.com/luxai-qtrobot/software/blob/master/apps/qt_vosk_app/src/qt_vosk_app_node.py#L144)
+The vosk node relies on models which are distributed in separate packages,
+collected in the [vosk_language_models](https://gitlab/interaction/vosk_language_models) repository.
+The related debians follow the naming scheme `pal-alum-asr-vosk-language-model-<locale>-<model_size>`,
+where `<locale>` is the locale selected and `<size>`.
 
+## ROS API
 
-## Vosk configuration files
+### Parameters
 
-You can include or edit the Vosk configuration file stored in
-`/opt/pal/gallium/share/vosk_asr/vosk_recognizer_config.yaml`. It should look like
-[vosk_recognizer_config.yaml](https://gitlab/interaction/vosk_asr/-/blob/main/config/vosk_recognizer_config.yaml).
+All parameters are loaded in the lifecycle `configuration` transition.
 
-## ROS interfaces
+- `audio_rate` (int, default: 16000): Device sampling rate.
+- `locale` (string, default: "en_US"):
+  The desired locale, using following format:
+  the [ISO 639-1 language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes),
+  followed by an hyphen,
+  followed by the [ISO 3166-1 alpha-2 region code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).
+- `model_size` (string, default: "small"): Model size [small, large].
+- `supported_locales` (string array):
+  List of locales supported and configurable in the `locale` parameter.
+  It is computed at runtime from the list of installed models found.
 
-The Vosk node provides the following ROS interfaces. It subscribes to the
-processed channel 0 `/audio/channel0` input from the ReSpeaker microphone and looks
-for the currently active language model.
+### Topics
 
-For example, if the language is *en_GB*, it
-searches in the following order, always prioritizing large models. Note that if
-for instance *en_GB* does not exist, it will then check for *en_XXX*, such as
-*en_US*. 
+#### Subscribed
 
-- `/opt/pal/gallium/share/vosk_language_models/en_GB/small/`
-- `/opt/pal/gallium/share/vosk_language_models/en_GB/large/`
-- `/opt/pal/gallium/share/vosk_language_models/en_US/small/`
-- ...
+- `/audio/channel0` ([audio_common_msgs/AudioData](https://github.com/ros-drivers/audio_common/blob/ros2/audio_common_msgs/msg/AudioData.msg)):
+  Microphone audio stream.
+- `/audio/voice_detected` ([std_msgs/Bool](https://github.com/ros2/common_interfaces/blob/humble/std_msgs/msg/Bool.msg)):
+  Microphone voice activation detection.
+- `/tts/goal` ([pal_tts_msgs/TTS Goal](https://gitlab/apps/pal_tts2/-/blob/main/pal_tts_msgs/action/TTS.action)):
+  Goal of the robot text-to-speech action request.
+  This is an optional topic, used to avoid speech detection of the robot's own speech.
+  It must be used in conjunction with `/tts/result`.
+- `/tts/result` ([pal_tts_msgs/TTS Result](https://gitlab/apps/pal_tts2/-/blob/main/pal_tts_msgs/action/TTS.action)):
+  Result of the robot text-to-speech action request.
+  This is an optional topic, used to avoid speech detection of the robot's own speech.
+  It must be used in conjunction with `/tts/goal`.
 
+#### Published
 
-If no language exists, it will select the default language that is installed on
-the robot, which is the small *en_US* model.
+- `/humans/voices/tracked` ([hri_msgs/IdsList](https://github.com/ros4hri/hri_msgs/blob/humble-devel/msg/IdsList.msg)):
+  List of voices ids detected (currently always only "anonymous_speaker").
+- `/humans/voices/anonymous_speaker/audio` ([audio_common_msgs/AudioData](https://github.com/ros-drivers/audio_common/blob/ros2/audio_common_msgs/msg/AudioData.msg)):
+  Voice audio stream.
+- `/humans/voices/anonymous_speaker/is_speaking` ([std_msgs/Bool](https://github.com/ros2/common_interfaces/blob/humble/std_msgs/msg/Bool.msg)):
+  Voice speech detection.
+- `/humans/voices/anonymous_speaker/speech` ([hri_msgs/LiveSpeech](https://github.com/ros4hri/hri_msgs/blob/humble-devel/msg/LiveSpeech.msg)):
+  Speech recognized.
+- `/diagnostics` ([diagnostic_msgs/DiagnosticArray](https://github.com/ros2/common_interfaces/blob/humble/diagnostic_msgs/msg/DiagnosticArray.msg))
 
-You can change the current active language with the ROS action
-`/asr/set_locale`.
+## Launch
 
-
-Recognised text is published on `/humans/voices/anonymous_speaker/speech`. 
-
-
-
-**ROS actions**
-
-- `start_asr` ROS action: type `hri_actions_msgs/StartASR` : starts processing
-audio captured through the ReSpeaker microphone with Kaldi in a given language
-
-- `stop_asr` ROS action: type `hri_actions_msgs/StopASR`: stops processing audio
-captured
-
-
-**Subscribed topics**
-
-- `/audio/channel0` ROS topic: type `audio_common_msgs/AudioData`: processed
-  audio of channel 0 published by the ReSpeaker array. **Note: **pending to
-  merge https://gitlab/ros-overlays/respeaker_ros/-/tree/multichannel
-
-
-- `/is_speeching` ROS topic:  type `std_msgs/Bool`: boolean indicating whether
-  user is speaking or not, coming from the ReSpeaker array
-
-
-**Published topics**
-
-- `/humans/voices/anonymous_speaker/speech` ROS topic: type
-  `hri_msgs/LiveSpeech`: publishes the incremental and final text recognized
-
-
-- `/humans/voices/anonymous_speaker/is_speaking` ROS topic: type
-  ``std_msgs/Bool`: publishes a boolean indicating whether a person is speaking
-  or not
-
-
--  `/humans/voices/anonymous_speaker/audio` ROS topic: type
-   `audio_common_msgs/AudioData`: republishes the `/audio/channel0`` processed
-   audio topic coming from the ReSpeaker array
-
-**ROS parameters**
-
-- `/vosk_asr/audio_rate` (default: 16000)
-- `/vosk_asr/vosk_model_path` (default:`/opt/pal/gallium/share/vosk_language_models/`)
-- `/vosk_asr/default_language` (default: `en_US`)
-- `/vosk_asr/model_size` (default: look for available ones, starting with the
-  largest available size
-
-## Adding a new Vosk language
-
-The robot comes by default with the English language model, that is installed in
-`/opt/pal/gallium/share/vosk_language_models/`, in addition to other languages
-that were requested when buying the robot.  Models come from  Vosk language
-models <https://alphacephei.com/vosk/models>`_ and may be small or large models.
-
-
-Imagine you want to add a Spanish language model. As you see in `Vosk language
-models <https://alphacephei.com/vosk/models>`_ there are both small and large
-models available. Generally a larger model will produce a more accurate results,
-but it will also be heavier on the CPU to run.  In this exercise we will add the
-small model.
-
-
-Download the small spanish model in the
-`/home/pal/.pal/Vosk/vosk_language_models/es_ES/small` directory:
-
- ```
-  ssh pal@ari-0c
-
-   cd /home/pal/.pal/
-
-   mkdir Vosk
-
-   cd Vosk
-
-   mkdir vosk_language_models
-
-   cd vosk_language_models
-
-   mkdir es_ES
-
-   cd es_ES
-
-   wget https://alphacephei.com/vosk/models/vosk-model-small-es-0.42.zip
+```bash
+ros2 launch asr_vosk asr_vosk.launch.py
 ```
 
+The `asr_vosk.launch.py` launch file accepts as arguments and configures the defined [parameters](#parameters).
+It also automatically transitions the node to the active state.
 
-Make sure to unzip and rename the model accordingly. In the same directory, as
-it is a small model:
+## Example
 
+To test thepackage using the system default microphone:
 
-```
-   unzip vosk-model-small-es-0.42.zip
-   mv vosk-model-small-es-0.42/ small/
-```
-
-
-The `vosk_asr` node will automatically be able to find this new model already
-once it is restarted:
-
-`rosrun pal_docker_vosk run_vosk.sh`
-
-
-You are free to train new Vosk models in other languages as well, to do so
-follow the **Training your own model** section of `Vosk tutorial
-<https://alphacephei.com/vosk/models>`_. 
-
-
-Check [vosk_language_models](https://gitlab/interaction/vosk_language_models)
-and [pal_docker_vosk](https://gitlab/Dockers/pal_docker_vosk) README for more
-details. 
-
-
-
-## Testing ASR from the terminal
-
-Once we have the desired language models, test it by calling the ROS action of `start_vosk`
-
-```
-   rostopic pub /start_asr/goal hri_action_msgs/StartASRActionGoal "header:
-     seq: 0
-     stamp:
-       secs: 0
-       nsecs: 0
-     frame_id: ''
-   goal_id:
-     stamp:
-       secs: 0
-       nsecs: 0
-     id: ''
-   goal:
-     language: 'es_ES'" 
-```
-
-
-Try to speak to the robot in spanish and monitor the recognized output:
-
-```
-   rostopic echo /humans/voices/anonymous_speaker/speech 
-	header: 
-	  seq: 1
-	  stamp: 
-	    secs: 0
-	    nsecs:         0
-	  frame_id: ''
-	incremental: ''
-	final: "hola encantada de conocerte"
-	confidence: 0.0
-```
-
-
-Stop the recognizer:
-
-```
-	rostopic pub /stop_asr/goal hri_actions_msgs/StopASRActionGoal "header:
-	  seq: 0
-	  stamp:
-	    secs: 0
-	    nsecs: 0
-	  frame_id: ''
-	goal_id:
-	  stamp:
-	    secs: 0
-	    nsecs: 0
-	  id: ''
-	goal: {}" 
-```
-
-
-Check to make sure the robot is no longer listening. You should get any output at all even if you speak 
-to the robot.
-
-
-`   rostopic echo /humans/voices/anonymous_speaker/speech `
-   
-    
-Start Vosk again with a different language and repeat the procedure:
- 
-```
-   rostopic pub /start_vosk/goal hri_actions_msgs/StartASRActionGoal "header:
-     seq: 0
-     stamp:
-       secs: 0
-       nsecs: 0
-     frame_id: ''
-   goal_id:
-     stamp:
-       secs: 0
-       nsecs: 0
-     id: ''
-   goal:
-     language: 'en_US'" 
-```
-
-## Testing ASR from code
-
-From Python you can call the respective ROS actions, and subscribe to the audio transcription. In the 
-example below, based on the speech it understands the robot will say something different using its
-text-to-speech, calling the `/tts` action.
-
-There is an example script in `vosk_asr/src/vosk_tutorial.py`
-
-
-# Related repositories
-
-[vosk_asr](https://gitlab/interaction/vosk_asr)
-
-[vosk_language_models](https://gitlab/interaction/vosk_language_models)
-
-[pal_docker_vosk](https://gitlab/Dockers/pal_docker_vosk)
+1. Install the `audio_capture` package:
+   `sudo apt install pal-alum-audio-capture`
+1. Launch the `audio_capture` package:
+   `ros2 launch audio_capture capture.launch.xml audio_topic:=channel0 format:=wave`
+1. In a new terminal, launch the `asr_vosk` package:
+   `ros2 launch asr_vosk asr_vosk.launch.py`
+1. In a new terminal, manually activate the voice detection
+   (`asr_vosk` will continuously attempt to recognize a speech, even no one is speaking):
+   `ros2 topic pub --once /audio/voice_detected std_msgs/msg/Bool  "{data: true}"`
+1. Check the recognized speech output:
+   `ros2 topic echo /humans/voices/anonymous_speaker/speech`

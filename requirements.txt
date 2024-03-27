@@ -1,13 +1,5 @@
-certifi==2023.5.7         # via requests
-cffi==1.15.1              # via cryptography, vosk
-charset-normalizer==3.1.0  # via requests
-cryptography==40.0.2      # via pyopenssl
-idna==3.4                 # via requests
-pycparser==2.21           # via cffi
-pyopenssl==23.1.1         # via -r requirements.in
-requests==2.30.0          # via vosk
-srt==3.5.3                # via vosk
-tqdm==4.65.0              # via vosk
-urllib3==2.0.2            # via requests
-vosk==0.3.45              # via -r requirements.in
-websockets==11.0.3        # via vosk
+lark==1.1.1
+numpy==1.21.5
+pytest==8.0.2
+pyyaml==6.0.1
+vosk==0.3.45

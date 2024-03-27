@@ -1,0 +1,2 @@
+asr_vosk:
+  run: "asr_vosk asr_vosk"  # The language_center is expected to activate the node

@@ -1,32 +1,41 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>vosk_asr</name>
-  <version>0.2.2</version>
-  <description>The vosk_asr package</description>
+  <name>asr_vosk</name>
+  <version>1.9.9</version>
+  <description>The asr_vosk package</description>
   <maintainer email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</maintainer>
-
+  <license>Apache License 2.0</license>
   <author email="severin.lemaignan@pal-robotics.com">Séverin Lemaignan</author>
   <author email="sara.cooper@pal-robotics.com">Sara Cooper</author>
+  <author email="luka.juricic@pal-robotics.com">Luka Juricic</author>
 
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>LuxAI S.A.</license>
+  <buildtool_depend>ament_virtualenv</buildtool_depend>
 
-  <depend>message_generation</depend>
-  <depend>message_runtime</depend>
-  <buildtool_depend>catkin</buildtool_depend>
-  <depend>rospy</depend>
-  <depend>std_msgs</depend>
-  <depend>actionlib</depend>
-  <depend>hri_msgs</depend>
-  <depend>hri_actions_msgs</depend>
-  <depend>pal_interaction_msgs</depend>
-  <depend>i18n_msgs</depend>
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>audio_common_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>hri_actions_msgs</exec_depend>
+  <exec_depend>hri_msgs</exec_depend>
+  <exec_depend>i18n_msgs</exec_depend>
+  <exec_depend>lifecycle_msgs</exec_depend>
+  <exec_depend>pal_tts_msgs</exec_depend>
+  <exec_depend>rcl_interfaces</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
 
-  <depend>catkin_virtualenv</depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>audio_common_msgs</test_depend>
+  <test_depend>pyhri</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <test_depend>rosbag2_py</test_depend>
+  <test_depend>rosgraph_msgs</test_depend>
+  <test_depend>std_msgs</test_depend>
+  <test_depend>asr_vosk_language_model_en_us_small</test_depend>
 
   <export>
+    <build_type>ament_python</build_type>
     <pip_requirements>requirements.txt</pip_requirements>
   </export>
 </package>
