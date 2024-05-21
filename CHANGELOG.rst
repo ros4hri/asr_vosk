@@ -2,6 +2,13 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* port to humble; rename package to asr_vosk
+* vosk_tutorial.py: remove deprecated StartASR/StopASR
+* update README
+* Contributors: Luka Juricic, Séverin Lemaignan
+
 0.2.2 (2023-05-23)
 ------------------
 * {language_center_msgs -> i18n_msgs}
