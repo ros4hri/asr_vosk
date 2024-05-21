@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2024-05-21)
+------------------
 * port to humble; rename package to asr_vosk
 * vosk_tutorial.py: remove deprecated StartASR/StopASR
 * update README
