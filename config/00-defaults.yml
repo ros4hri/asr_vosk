@@ -2,7 +2,7 @@
   ros__parameters:
     # Device sampling rate
     audio_rate: 16000
-    # Regional language locale
-    locale: en_US
-    # Model size [small, large]
-    model_size: small
+    # Model family name
+    mode: vosk_model_small
+    # Default locale
+    default_locale: en_US

@@ -18,13 +18,16 @@ from audio_common_msgs.msg import AudioData
 from collections import defaultdict
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from hri_msgs.msg import IdsList, LiveSpeech
+from i18n_msgs.action import SetLocale
+from i18n_msgs.srv import GetLocales
 import json
 from lifecycle_msgs.msg import State
-from pal_tts_msgs.action import TTS
 from rcl_interfaces.msg import ParameterDescriptor
 import rclpy
+from rclpy.action import ActionServer, GoalResponse
 from rclpy.executors import SingleThreadedExecutor, ExternalShutdownException
 from rclpy.lifecycle import Node, LifecycleState, TransitionCallbackReturn
+from rclpy.parameter import Parameter
 from std_msgs.msg import Bool
 from vosk import Model, KaldiRecognizer
 import yaml
@@ -36,30 +39,17 @@ class NodeVosk(Node):
     def __init__(self):
         super().__init__('asr_vosk')
 
-        resource_type = 'asr.vosk.model'
-        self.available_models = defaultdict(dict)
-        for pkg in get_resources(resource_type).keys():
-            pkg_share_path = get_package_share_path(pkg)
-            cfg_file_path = pkg_share_path / get_resource(resource_type, pkg)[0]
-            with open(cfg_file_path, 'r') as f:
-                cfg = yaml.safe_load(f)
-                self.available_models[cfg['locale']][cfg['size']] = pkg_share_path / cfg['path']
-
         self.declare_parameter(
             'audio_rate', 16000, ParameterDescriptor(description='Device sampling rate'))
         self.declare_parameter(
-            'locale', "en_US", ParameterDescriptor(description='Regional language locale'))
+            'model', "vosk_model_small", ParameterDescriptor(description='Model family name'))
         self.declare_parameter(
-            'model_size', "small", ParameterDescriptor(description='Model size [small, large]'))
-        self.declare_parameter(
-            'supported_locales', list(self.available_models.keys()), ParameterDescriptor(
-                description='Supported regional languages locales', read_only=True))
+            'default_locale', "en_US", ParameterDescriptor(description='Default locale'))
 
         self.get_logger().info('State: Unconfigured.')
 
     def __del__(self):
-        state = self._state_machine.current_state
-        self.on_shutdown(LifecycleState(state_id=state[0], label=state[1]))
+        self.trigger_shutdown()
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
         self.internal_cleanup()
@@ -67,19 +57,29 @@ class NodeVosk(Node):
         return super().on_cleanup(state)
 
     def on_configure(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.locale = self.get_parameter('locale').value
-        audio_rate = self.get_parameter('audio_rate').value
-        model_size = self.get_parameter('model_size').value
+        self.audio_rate = self.get_parameter('audio_rate').value
+        self.default_locale = self.get_parameter('default_locale').value
+        self.model = self.get_parameter('model').value
 
-        try:
-            model_path = str(self.available_models[self.locale][model_size])
-            self.model = Model(model_path)
-            self.get_logger().info(f'Loaded {self.locale} {model_size} model')
-        except Exception as e:  # vosk Model raises generic exceptions :/
-            self.get_logger().error(f'Failed to load {self.locale} {model_size} model: {str(e)}')
+        # Load available models and set the supported locales accordingly
+        resource_type = 'asr.vosk.model'
+        self.available_models = defaultdict(dict)
+        for pkg in get_resources(resource_type).keys():
+            pkg_share_path = get_package_share_path(pkg)
+            cfg_file_path = pkg_share_path / get_resource(resource_type, pkg)[0]
+            with open(cfg_file_path, 'r') as f:
+                cfg = yaml.safe_load(f)
+                try:
+                    if self.model == cfg['name']:
+                        self.available_models[cfg['locale']] = pkg_share_path / cfg['path']
+                except KeyError as e:
+                    self.get_logger().error(
+                        f'Error parsing configuration for package {pkg}: {str(e)}')
+                    return TransitionCallbackReturn.FAILURE
+
+        loaded_model, _ = self.load_model(self.default_locale)
+        if not loaded_model:
             return TransitionCallbackReturn.FAILURE
-
-        self.recognizer = KaldiRecognizer(self.model, audio_rate)
 
         self.get_logger().info('State: Inactive.')
         return super().on_configure(state)
@@ -90,9 +90,9 @@ class NodeVosk(Node):
         return super().on_deactivate(state)
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
-        self.listening = True
         self.current_incremental = ''
         self.last_final = ''
+        self.listening = True
 
         self.diag_pub = self.create_publisher(
             DiagnosticArray, "/diagnostics", 1)
@@ -106,13 +106,19 @@ class NodeVosk(Node):
             Bool, "/humans/voices/anonymous_speaker/is_speaking", 10)
 
         self.audio_data_sub = self.create_subscription(
-            AudioData, "/audio/channel0", self.on_audio_data, 10)
+            AudioData, "audio/channel0", self.on_audio_data, 10)
         self.voice_detected_sub = self.create_subscription(
-            Bool, "/audio/voice_detected", self.on_voice_detected, 1)
-        self.tts_goal_sub = self.create_subscription(
-            TTS.Goal, "/tts/goal", self.on_tts_goal, 1)
-        self.tts_result_sub = self.create_subscription(
-            TTS.Result, "/tts/result", self.on_tts_result, 1)
+            Bool, "audio/voice_detected", self.on_voice_detected, 1)
+        self.voice_detected_sub = self.create_subscription(
+            Bool, "/robot_speaking", self.on_robot_speaking, 1)
+
+        self.get_supported_locales_server = self.create_service(
+            GetLocales, "~/get_supported_locales", self.on_get_supported_locales)
+
+        self.set_default_locale_server = ActionServer(
+            self, SetLocale, "~/set_default_locale",
+            goal_callback=self.on_set_default_locale_goal,
+            execute_callback=self.on_set_default_locale_exec)
 
         self.diag_timer = self.create_timer(1., self.publish_diagnostics)
 
@@ -132,36 +138,43 @@ class NodeVosk(Node):
 
     def internal_cleanup(self):
         del self.recognizer
-        del self.model
 
     def internal_deactivate(self):
         self.destroy_timer(self.diag_timer)
+        del self.set_default_locale_server
+        self.destroy_service(self.get_supported_locales_server)
         self.destroy_subscription(self.audio_data_sub)
         self.destroy_subscription(self.voice_detected_sub)
-        self.destroy_subscription(self.tts_goal_sub)
-        self.destroy_subscription(self.tts_result_sub)
         self.destroy_publisher(self.diag_pub)
         self.destroy_publisher(self.voices_pub)
         self.destroy_publisher(self.speech_pub)
         self.destroy_publisher(self.voice_audio_pub)
         self.destroy_publisher(self.is_speaking_pub)
 
-    def on_tts_goal(self, _):
-        self.listening = False
-        self.last_incremental = ''
-        self.recognizer.Reset()
+    def load_model(self, locale):
+        try:
+            model_path = str(self.available_models[locale])
+            model = Model(model_path)
+            self.get_logger().info(f'Loaded {self.model} {locale} model')
+        except Exception as e:  # vosk Model raises generic exceptions :/
+            error_msg = f'Failed to load {self.model} {locale} model: {str(e)}'
+            self.get_logger().error(error_msg)
+            return False, error_msg
 
-    def on_tts_result(self, _):
-        self.listening = True
+        self.recognizer = KaldiRecognizer(model, self.audio_rate)
+        return True, ""
 
     def on_voice_detected(self, msg):
         self.is_speaking_pub.publish(msg)
+
+    def on_robot_speaking(self, msg):
+        self.listening = not msg.data
 
     def on_audio_data(self, audio_data_msg):
         self.voice_audio_pub.publish(audio_data_msg)
 
         if self.listening:
-            speech_msg = LiveSpeech(language=self.locale, confidence=1.)
+            speech_msg = LiveSpeech(locale=self.default_locale, confidence=1.)
             speech_msg.header.stamp = self.get_clock().now().to_msg()
 
             if self.recognizer.AcceptWaveform(bytes(audio_data_msg.data)):
@@ -186,6 +199,29 @@ class NodeVosk(Node):
 
                 self.current_incremental = partial
 
+    def on_get_supported_locales(self, request, response):
+        response.locales = list(self.available_models.keys())
+        return response
+
+    def on_set_default_locale_goal(self, goal_request):
+        if goal_request.locale in self.available_models:
+            return GoalResponse.ACCEPT
+        else:
+            return GoalResponse.REJECT
+
+    def on_set_default_locale_exec(self, goal_handle):
+        locale = goal_handle.request.locale
+        result = SetLocale.Result()
+        loaded_model, error_msg = self.load_model(locale)
+        if loaded_model:
+            self.set_parameters([Parameter('default_locale', value=locale)])
+            self.default_locale = locale
+            goal_handle.succeed()
+        else:
+            goal_handle.abort()
+            result.error_msg = error_msg
+        return result
+
     def publish_diagnostics(self):
         arr = DiagnosticArray()
         msg = DiagnosticStatus(
@@ -194,6 +230,10 @@ class NodeVosk(Node):
             message="vosk ASR running",
             values=[
                 KeyValue(key="Package name", value="asr_vosk"),
+                KeyValue(key="Model", value=self.model),
+                KeyValue(key="Supported locales", value=str(self.available_models.keys())),
+                KeyValue(key="Current default_locale", value=self.default_locale),
+                KeyValue(key="Currently listening", value=str(self.listening)),
                 KeyValue(key="Last recognised sentence", value=self.last_final),
             ],
         )

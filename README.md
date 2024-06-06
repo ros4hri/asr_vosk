@@ -6,8 +6,7 @@ This repository is a PAL wrapper of offline Speech Recognition model [Vosk](http
 
 The vosk node relies on models which are distributed in separate packages,
 collected in the [vosk_language_models](https://gitlab/interaction/vosk_language_models) repository.
-The related debians follow the naming scheme `pal-alum-asr-vosk-language-model-<locale>-<model_size>`,
-where `<locale>` is the locale selected and `<size>`.
+The related debians follow the naming scheme `pal-alum-asr-vosk-language-model-<locale>-<model_size>`.
 
 ## ROS API
 
@@ -16,32 +15,24 @@ where `<locale>` is the locale selected and `<size>`.
 All parameters are loaded in the lifecycle `configuration` transition.
 
 - `audio_rate` (int, default: 16000): Device sampling rate.
-- `locale` (string, default: "en_US"):
-  The desired locale, using following format:
+- `model` (string, default: "vosk_model_small"): Model family name.
+- `default_locale` (string, default: "en_US"):
+  The desired default_locale, using following format:
   the [ISO 639-1 language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes),
-  followed by an hyphen,
+  followed by an underscore,
   followed by the [ISO 3166-1 alpha-2 region code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).
-- `model_size` (string, default: "small"): Model size [small, large].
-- `supported_locales` (string array):
-  List of locales supported and configurable in the `locale` parameter.
-  It is computed at runtime from the list of installed models found.
 
 ### Topics
 
 #### Subscribed
 
-- `/audio/channel0` ([audio_common_msgs/AudioData](https://github.com/ros-drivers/audio_common/blob/ros2/audio_common_msgs/msg/AudioData.msg)):
+- `audio/channel0` ([audio_common_msgs/AudioData](https://github.com/ros-drivers/audio_common/blob/ros2/audio_common_msgs/msg/AudioData.msg)):
   Microphone audio stream.
-- `/audio/voice_detected` ([std_msgs/Bool](https://github.com/ros2/common_interfaces/blob/humble/std_msgs/msg/Bool.msg)):
+- `audio/voice_detected` ([std_msgs/Bool](https://github.com/ros2/common_interfaces/blob/humble/std_msgs/msg/Bool.msg)):
   Microphone voice activation detection.
-- `/tts/goal` ([pal_tts_msgs/TTS Goal](https://gitlab/apps/pal_tts2/-/blob/main/pal_tts_msgs/action/TTS.action)):
-  Goal of the robot text-to-speech action request.
-  This is an optional topic, used to avoid speech detection of the robot's own speech.
-  It must be used in conjunction with `/tts/result`.
-- `/tts/result` ([pal_tts_msgs/TTS Result](https://gitlab/apps/pal_tts2/-/blob/main/pal_tts_msgs/action/TTS.action)):
-  Result of the robot text-to-speech action request.
-  This is an optional topic, used to avoid speech detection of the robot's own speech.
-  It must be used in conjunction with `/tts/goal`.
+- `/robot_speaking` ([std_msgs/Bool](https://github.com/ros2/common_interfaces/blob/humble/std_msgs/msg/Bool.msg)):
+  (QoS: transient local).
+  While the robot is speakin, no message is published on `/humans/voices/*`.
 
 #### Published
 
@@ -54,6 +45,34 @@ All parameters are loaded in the lifecycle `configuration` transition.
 - `/humans/voices/anonymous_speaker/speech` ([hri_msgs/LiveSpeech](https://github.com/ros4hri/hri_msgs/blob/humble-devel/msg/LiveSpeech.msg)):
   Speech recognized.
 - `/diagnostics` ([diagnostic_msgs/DiagnosticArray](https://github.com/ros2/common_interfaces/blob/humble/diagnostic_msgs/msg/DiagnosticArray.msg))
+
+### Services
+
+#### Servers
+
+- `~/get_supported_locales` ([i18n_msgs/GetLocales](https://gitlab/interaction/i18n_msgs/-/blob/humble-devel/srv/GetLocales.srv)):
+  Get the list of locales supported and configurable in the `default_locale` parameter.
+  It is computed at runtime during configure transition from the list of installed models found for `model` parameter.
+
+### Actions
+
+#### Servers
+
+- `~/set_default_locale` ([i18n_msgs/SetLocale](https://gitlab/interaction/i18n_msgs/-/blob/humble-devel/action/SetLocale.action)):
+  Sets the `default_locale` parameter and loads the corresponding model.
+
+## Resources
+
+(For an intro on resources, see [ament_index](https://github.com/ament/ament_cmake/blob/master/ament_cmake_core/doc/resource_index.md)).
+
+- `asr.vosk.models`:
+  All the available models are installed under this resource.
+  It expects marker files containing the `model descriptor` path, separated in different lines, relative to its package share folder install path.
+  The `model descriptor` is a YAML file containing:
+  - model family name,
+  - locale,
+  - model binary location.
+  Various `asr_vosk_language_model_<locale>_<size>` packages install each one such model.
 
 ## Launch
 

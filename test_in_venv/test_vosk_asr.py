@@ -51,8 +51,8 @@ class TestVoskMixin():
         rclpy.init()
         cls.vosk_node = NodeVosk()
         cls.vosk_node.set_parameters([
-            Parameter(name='locale', value=cls.locale),
-            Parameter(name='model_size', value=cls.model_size),
+            Parameter(name='model', value=cls.model),
+            Parameter(name='default_locale', value=cls.locale),
             Parameter(name='use_sim_time', value=True)])
         cls.vosk_executor = SingleThreadedExecutor()
         cls.vosk_executor.add_node(cls.vosk_node)
@@ -114,8 +114,8 @@ class TestVoskMixin():
 
 
 class TestVoskEnglish(TestVoskMixin, unittest.TestCase):
+    model = 'vosk_model_small'
     locale = 'en_US'
-    model_size = 'small'
     bags_path = Path().cwd() / 'test_in_venv' / 'data' / 'en_US'
 
     # def test_bag_0(self):

@@ -25,8 +25,8 @@ from lifecycle_msgs.msg import Transition
 def generate_launch_description():
     param_args = [DeclareLaunchArgument(n, default_value=v, description=d) for n, v, d in [
         ('audio_rate', '16000', "Device sampling rate"),
-        ('locale', 'en_US', "Regional language locale"),
-        ('model_size', 'small', "Model size [small, large]")]]
+        ('model', 'vosk_model_small', "Model family name"),
+        ('default_locale', 'en_US', "Default locale")]]
 
     vosk_node = LifecycleNode(
         package='asr_vosk', executable='asr_vosk', namespace='', name='asr_vosk',
