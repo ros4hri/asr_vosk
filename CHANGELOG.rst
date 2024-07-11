@@ -2,6 +2,17 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Rework speech API
+  - rename tts package to tts_engine and tts_plugin\_*
+  - select model by family name
+  - update i18n support
+  - additional diagnostic info
+  - rename parameter locale to default_locale
+  - use robot_speaking topic
+* Contributors: Luka Juricic
+
 2.0.0 (2024-05-21)
 ------------------
 * port to humble; rename package to asr_vosk
