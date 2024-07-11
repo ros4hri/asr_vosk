@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2024-07-11)
+------------------
 * Rework speech API
   - rename tts package to tts_engine and tts_plugin\_*
   - select model by family name
