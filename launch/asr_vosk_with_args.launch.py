@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from launch import LaunchDescription
-from launch.actions import EmitEvent, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, EmitEvent, RegisterEventHandler
 from launch.events import matches_action
-from launch_pal import get_pal_configuration
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from launch_ros.event_handlers import OnStateTransition
@@ -23,19 +23,14 @@ from lifecycle_msgs.msg import Transition
 
 
 def generate_launch_description():
-    pkg = 'asr_vosk'
-    node = 'asr_vosk'
-    ld = LaunchDescription()
-    config = get_pal_configuration(pkg=pkg, node=node, ld=ld)
+    param_args = [DeclareLaunchArgument(n, default_value=v, description=d) for n, v, d in [
+        ('audio_rate', '16000', "Device sampling rate"),
+        ('model', 'vosk_model_small', "Model family name"),
+        ('default_locale', 'en_US', "Default locale")]]
 
     vosk_node = LifecycleNode(
-        package=pkg,
-        executable='asr_vosk',
-        namespace='',
-        name=node,
-        parameters=config["parameters"],
-        remappings=config["remappings"],
-        arguments=config["arguments"],
+        package='asr_vosk', executable='asr_vosk', namespace='', name='asr_vosk',
+        parameters=[{a.name: LaunchConfiguration(a.name) for a in param_args}],
         output='both', emulate_tty=True)
 
     configure_event = EmitEvent(event=ChangeState(
@@ -48,7 +43,9 @@ def generate_launch_description():
             lifecycle_node_matcher=matches_action(vosk_node),
             transition_id=Transition.TRANSITION_ACTIVATE))]))
 
-    ld.add_action(vosk_node)
-    ld.add_action(configure_event)
-    ld.add_action(activate_event)
-    return ld
+    return LaunchDescription([
+        *param_args,
+        vosk_node,
+        configure_event,
+        activate_event,
+    ])

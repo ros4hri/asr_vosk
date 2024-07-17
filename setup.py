@@ -32,7 +32,8 @@ setup(
         ('share/ament_index/resource_index/pal_system_module', ['module/' + package_name]),
         ('share/' + package_name, ['package.xml', 'requirements.txt']),
         ('share/' + package_name + '/config', ['config/00-defaults.yml']),
-        ('share/' + package_name + '/launch', ['launch/asr_vosk.launch.py']),
+        ('share/' + package_name + '/launch', [
+            'launch/asr_vosk.launch.py', 'launch/asr_vosk_with_args.launch.py']),
         ('share/' + package_name + '/module', ['module/asr_vosk_module.yaml']),
     ],
     install_requires=['setuptools'],
