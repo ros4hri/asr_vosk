@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add PAL configuration compliant launch file
+* Contributors: Luka Juricic
+
 2.1.0 (2024-07-11)
 ------------------
 * Rework speech API
