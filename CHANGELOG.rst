@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.0 (2024-07-17)
+------------------
 * add PAL configuration compliant launch file
 * Contributors: Luka Juricic
 
