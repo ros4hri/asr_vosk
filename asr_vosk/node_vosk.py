@@ -123,7 +123,13 @@ class NodeVosk(Node):
         self.diag_timer = self.create_timer(1., self.publish_diagnostics)
 
         # currently the voice is always associated to the same anonymous speaker
-        self.voices_pub.publish(IdsList(ids=["anonymous_speaker"]))
+        # publish it repeatedly to ensure latecomers get the message (the topic is not latched)
+        def publish_anonymous_voice_id():
+            self.voices_pub.publish(IdsList(ids=["anonymous_speaker"]))
+
+        publish_anonymous_voice_id()
+        self.voices_timer = self.create_timer(
+            1., publish_anonymous_voice_id, clock=self.get_clock())
 
         self.get_logger().info('State: Active.')
         return super().on_activate(state)
