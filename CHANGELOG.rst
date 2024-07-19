@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* republish anonymous voice id for latecomers
+* Contributors: Luka Juricic
+
 2.2.1 (2024-07-18)
 ------------------
 
