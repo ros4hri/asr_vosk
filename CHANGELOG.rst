@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.2.3 (2024-07-24)
+------------------
 * update dependencies
 * Contributors: Luka Juricic
 
