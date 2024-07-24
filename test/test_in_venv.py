@@ -22,4 +22,5 @@ def test_in_venv():
     print(f'Executing venv testing subprocess: {cmd}')
     process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     print(process.stdout.decode("utf-8"))
+    print(process.stderr.decode("utf-8"))
     assert process.returncode == 0
