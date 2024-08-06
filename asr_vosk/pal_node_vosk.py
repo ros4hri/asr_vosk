@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# !! PAL Robotics specific !!
+# To use vosk outside of a PAL robot or a PAL developer docker, use the
+# standard entry point in node_vosk.py.
+#
 # This wrapper for the Vosk ASR node is needed to add the Vosk Python module to the Python path,
-# due to `vosk` debian installing a separate virtual environment.
-
+# due to the PAL `vosk` debian installing a vosk virtual environment in /opt/pal/venvs.
 import sys
 python_version = f'{sys.version_info.major}.{sys.version_info.minor}'
 sys.path.insert(0, f'/opt/pal/venvs/vosk/lib/python{python_version}/site-packages')
