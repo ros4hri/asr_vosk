@@ -30,7 +30,7 @@ def generate_launch_description():
 
     vosk_node = LifecycleNode(
         package=pkg,
-        executable='asr_vosk',
+        executable='pal_asr_vosk',
         namespace='',
         name=node,
         parameters=config["parameters"],

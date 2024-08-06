@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_index_python.packages import get_package_share_path
-import subprocess
+# This wrapper for the Vosk ASR node is needed to add the Vosk Python module to the Python path,
+# due to `vosk` debian installing a separate virtual environment.
 
+import sys
+python_version = f'{sys.version_info.major}.{sys.version_info.minor}'
+sys.path.insert(0, f'/opt/pal/venvs/vosk/lib/python{python_version}/site-packages')
 
-def test_in_venv():
-    venv_python_path = str(get_package_share_path('asr_vosk') / 'venv' / 'bin' / 'python')
-    cmd = [venv_python_path, '-m', 'pytest', '-s', 'test_in_venv']
-    print(f'Executing venv testing subprocess: {cmd}')
-    process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(process.stdout.decode("utf-8"))
-    print(process.stderr.decode("utf-8"))
-    assert process.returncode == 0
+from asr_vosk.node_vosk import NodeVosk, main  # noqa: E402, F401
+
+if __name__ == '__main__':
+    main()

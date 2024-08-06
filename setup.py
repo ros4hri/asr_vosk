@@ -16,12 +16,6 @@ from setuptools import setup
 
 package_name = 'asr_vosk'
 
-try:
-    from ament_virtualenv.install import InstallCommand
-    cmdclass = {'install': InstallCommand}
-except ImportError:
-    cmdclass = {}
-
 
 setup(
     name=package_name,
@@ -32,7 +26,7 @@ setup(
         ('share/ament_index/resource_index/pal_system_module', ['module/' + package_name]),
         ('share/ament_index/resource_index/pal_configuration.' + package_name,
             ['config/' + package_name]),
-        ('share/' + package_name, ['package.xml', 'requirements.txt']),
+        ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/00-defaults.yml']),
         ('share/' + package_name + '/launch', [
             'launch/asr_vosk.launch.py', 'launch/asr_vosk_with_args.launch.py']),
@@ -48,7 +42,7 @@ setup(
     entry_points={
         'console_scripts': [
                 'asr_vosk = asr_vosk.node_vosk:main',
+                'pal_asr_vosk = asr_vosk.pal_node_vosk:main',
         ],
     },
-    cmdclass=cmdclass,
 )

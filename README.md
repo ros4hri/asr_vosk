@@ -8,6 +8,9 @@ The vosk node relies on models which are distributed in separate packages,
 collected in the [vosk_language_models](https://gitlab/interaction/vosk_language_models) repository.
 The related debians follow the naming scheme `pal-alum-asr-vosk-language-model-<locale>-<model_size>`.
 
+It also depends on the `vosk` debian package, which is a packaged virtual environment containing vosk.
+If you do not have it available, you can install via pip: `pip install vosk==0.3.45`.
+
 ## ROS API
 
 ### Parameters
@@ -76,11 +79,14 @@ All parameters are loaded in the lifecycle `configuration` transition.
 
 ## Launch
 
+If you have the `vosk` debian, please use the `asr_vosk` executable node and the `asr_vosk_with_args.launch.py` launch file.
+Otherwise, if you installed via pip, please use `pal_asr_vosk` and `asr_vosk.launch.py`.
+
 ```bash
-ros2 launch asr_vosk asr_vosk.launch.py
+ros2 launch asr_vosk asr_vosk_with_args.launch.py
 ```
 
-The `asr_vosk.launch.py` launch file accepts as arguments and configures the defined [parameters](#parameters).
+The `asr_vosk_with_args.launch.py` launch file accepts as arguments and configures the defined [parameters](#parameters).
 It also automatically transitions the node to the active state.
 
 ## Example

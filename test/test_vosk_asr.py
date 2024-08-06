@@ -24,7 +24,7 @@ from rosbag2_py import ConverterOptions, SequentialReader, StorageOptions
 from rosgraph_msgs.msg import Clock
 from std_msgs.msg import Bool
 import unittest
-from asr_vosk.node_vosk import NodeVosk
+from asr_vosk.pal_node_vosk import NodeVosk
 
 
 def spin_some(executor: Executor, timeout=timedelta(seconds=10.)):
@@ -116,7 +116,7 @@ class TestVoskMixin():
 class TestVoskEnglish(TestVoskMixin, unittest.TestCase):
     model = 'vosk_model_small'
     locale = 'en_US'
-    bags_path = Path().cwd() / 'test_in_venv' / 'data' / 'en_US'
+    bags_path = Path().cwd() / 'test' / 'data' / 'en_US'
 
     # def test_bag_0(self):
     #     self._test(self.bags_path / 'bag_0', 'bitch hit the robot')
