@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.0 (2024-08-07)
+------------------
 * clarify message explaining the purpose of the pal_node_vosk.py wrapper
 * switch from ament_virtualenv to vosk debian
 * Contributors: Luka Juricic, Séverin Lemaignan
