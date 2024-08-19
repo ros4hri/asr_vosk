@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rename diagnostics msg to match documentation (and diagnostic_aggregator) categories
+* Contributors: Séverin Lemaignan
+
 2.3.1 (2024-08-19)
 ------------------
 * update diagnostics to use 'Communication' category + export module name and lifecycle state
