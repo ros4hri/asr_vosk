@@ -2,6 +2,14 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* update diagnostics to use 'Communication' category + export module name and lifecycle state
+* [launch] disable the automatic transition to 'active' after initial launch
+  Note that this indirectly cause a crash in asr_vosk when setting the lifecycle state
+  to 'deactivate'. This will need to be addressed separately.
+* Contributors: Séverin Lemaignan
+
 2.3.0 (2024-08-07)
 ------------------
 * clarify message explaining the purpose of the pal_node_vosk.py wrapper
