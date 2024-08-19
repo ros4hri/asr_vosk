@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.3.1 (2024-08-19)
+------------------
 * update diagnostics to use 'Communication' category + export module name and lifecycle state
 * [launch] disable the automatic transition to 'active' after initial launch
   Note that this indirectly cause a crash in asr_vosk when setting the lifecycle state
