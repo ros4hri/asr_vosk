@@ -232,7 +232,7 @@ class NodeVosk(Node):
         arr = DiagnosticArray()
         msg = DiagnosticStatus(
             level=DiagnosticStatus.OK,
-            name="Communication: Speech recognition",
+            name="/communication/asr/asr_vosk",
             message="vosk ASR running",
             values=[
                 KeyValue(key="Module name", value="asr_vosk"),
