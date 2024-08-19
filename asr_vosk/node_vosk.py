@@ -232,10 +232,12 @@ class NodeVosk(Node):
         arr = DiagnosticArray()
         msg = DiagnosticStatus(
             level=DiagnosticStatus.OK,
-            name="Interaction: Speech recognition",
+            name="Communication: Speech recognition",
             message="vosk ASR running",
             values=[
-                KeyValue(key="Package name", value="asr_vosk"),
+                KeyValue(key="Module name", value="asr_vosk"),
+                KeyValue(key="Current lifecycle state",
+                         value=self._state_machine.current_state[1]),
                 KeyValue(key="Model", value=self.model),
                 KeyValue(key="Supported locales", value=str(self.available_models.keys())),
                 KeyValue(key="Current default_locale", value=self.default_locale),
