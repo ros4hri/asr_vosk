@@ -46,7 +46,7 @@ def generate_launch_description():
         target_lifecycle_node=vosk_node, goal_state='inactive',
         entities=[EmitEvent(event=ChangeState(
             lifecycle_node_matcher=matches_action(vosk_node),
-            transition_id=Transition.TRANSITION_ACTIVATE))]))
+            transition_id=Transition.TRANSITION_ACTIVATE))], handle_once=True))
 
     ld.add_action(vosk_node)
     ld.add_action(configure_event)
