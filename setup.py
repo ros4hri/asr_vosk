@@ -26,6 +26,8 @@ setup(
         ('share/ament_index/resource_index/pal_system_module', ['module/' + package_name]),
         ('share/ament_index/resource_index/pal_configuration.' + package_name,
             ['config/' + package_name]),
+        ('share/ament_index/resource_index/i18n.localized_nodes',
+            ['localized_nodes/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config', ['config/00-defaults.yml']),
         ('share/' + package_name + '/launch', [
