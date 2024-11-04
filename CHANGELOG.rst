@@ -2,8 +2,8 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.4.0 (2024-11-04)
+------------------
 * use ament index for localized nodes
 * Contributors: Luka Juricic
 
