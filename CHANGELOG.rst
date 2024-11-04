@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* use ament index for localized nodes
+* Contributors: Luka Juricic
+
 2.3.2 (2024-08-19)
 ------------------
 * rename diagnostics msg to match documentation (and diagnostic_aggregator) categories
