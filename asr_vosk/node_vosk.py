@@ -183,27 +183,34 @@ class NodeVosk(Node):
             speech_msg = LiveSpeech(locale=self.default_locale, confidence=1.)
             speech_msg.header.stamp = self.get_clock().now().to_msg()
 
-            if self.recognizer.AcceptWaveform(bytes(audio_data_msg.data)):
-                result = json.loads(self.recognizer.Result())
-                text = result["text"].strip()
+            non_empty_audio_data = False
+            for audio_data in audio_data_msg.data:
+                if audio_data != 0:
+                    non_empty_audio_data = True
+                    break
 
-                if text:
-                    speech_msg.incremental = text
-                    speech_msg.final = text
-                    self.speech_pub.publish(speech_msg)
+            if non_empty_audio_data or self.current_incremental:
+                if self.recognizer.AcceptWaveform(bytes(audio_data_msg.data)):
+                    result = json.loads(self.recognizer.Result())
+                    text = result["text"].strip()
 
-                    self.last_final = text
+                    if text:
+                        speech_msg.incremental = text
+                        speech_msg.final = text
+                        self.speech_pub.publish(speech_msg)
 
-                self.current_incremental = ''
-            else:
-                result = json.loads(self.recognizer.PartialResult())
-                partial = result["partial"]
+                        self.last_final = text
 
-                if partial and (partial != self.current_incremental):
-                    speech_msg.incremental = partial
-                    self.speech_pub.publish(speech_msg)
+                    self.current_incremental = ''
+                else:
+                    result = json.loads(self.recognizer.PartialResult())
+                    partial = result["partial"]
 
-                self.current_incremental = partial
+                    if partial and (partial != self.current_incremental):
+                        speech_msg.incremental = partial
+                        self.speech_pub.publish(speech_msg)
+
+                    self.current_incremental = partial
 
     def on_get_supported_locales(self, request, response):
         response.locales = list(self.available_models.keys())
