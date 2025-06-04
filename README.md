@@ -83,10 +83,17 @@ If you have the `vosk` debian, please use the `asr_vosk` executable node and the
 Otherwise, if you installed via pip, please use `pal_asr_vosk` and `asr_vosk.launch.py`.
 
 ```bash
-ros2 launch asr_vosk asr_vosk_with_args.launch.py
+ros2 launch asr_vosk asr_vosk.launch.py
 ```
 
-The `asr_vosk_with_args.launch.py` launch file accepts as arguments and configures the defined [parameters](#parameters).
+If you installed `vosk` via pip, instead of using the PAL debian package,
+you need to disable the usage of the PAL virtual environment for `vosk`:
+
+```bash
+ros2 launch asr_vosk asr_vosk.launch.py use_vosk_venv:=False
+```
+
+The `asr_vosk.launch.py` launch file accepts as arguments and configures the defined [parameters](#parameters).
 It also automatically transitions the node to the active state.
 
 ## Example
@@ -99,8 +106,5 @@ To test thepackage using the system default microphone:
    `ros2 launch audio_capture capture.launch.xml audio_topic:=channel0 format:=wave`
 1. In a new terminal, launch the `asr_vosk` package:
    `ros2 launch asr_vosk asr_vosk.launch.py`
-1. In a new terminal, manually activate the voice detection
-   (`asr_vosk` will continuously attempt to recognize a speech, even no one is speaking):
-   `ros2 topic pub --once /audio/voice_detected std_msgs/msg/Bool  "{data: true}"`
 1. Check the recognized speech output:
    `ros2 topic echo /humans/voices/anonymous_speaker/speech`
