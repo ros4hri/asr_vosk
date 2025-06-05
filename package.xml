@@ -32,6 +32,7 @@
   <test_depend>pyhri</test_depend>
   <test_depend>python3-pytest</test_depend>
   <test_depend>rosbag2_py</test_depend>
+  <test_depend>rosbag2_storage_default_plugins</test_depend>
   <test_depend>rosgraph_msgs</test_depend>
   <test_depend>std_msgs</test_depend>
   <test_depend>asr_vosk_language_model_en_us_small</test_depend>
