@@ -2,6 +2,13 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Do not run the model if empty message is received and there is not currently and incremental
+* add rosbag2 default plugins dependency
+* remove asr_vosk_with_args.launch.py
+* Contributors: Luka Juricic, ferrangebelli
+
 2.4.0 (2024-11-04)
 ------------------
 * use ament index for localized nodes
