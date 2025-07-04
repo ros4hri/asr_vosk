@@ -11,6 +11,7 @@
 
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>audio_common_msgs</exec_depend>
+  <exec_depend>diagnostic_aggregator</exec_depend>
   <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>hri_actions_msgs</exec_depend>
   <exec_depend>hri_msgs</exec_depend>
