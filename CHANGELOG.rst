@@ -2,6 +2,11 @@
 Changelog for package vosk_asr
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add diagnostic analyzers
+* Contributors: Noel Jimenez
+
 2.5.0 (2025-06-26)
 ------------------
 * Do not run the model if empty message is received and there is not currently and incremental
