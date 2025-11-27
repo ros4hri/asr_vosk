@@ -5,7 +5,7 @@ This repository is a PAL wrapper of offline Speech Recognition model [Vosk](http
 ## Preparation
 
 The vosk node relies on models which are distributed in separate packages,
-collected in the [vosk_language_models](https://gitlab/interaction/vosk_language_models) repository.
+collected in the [vosk_language_models](https://github.com/ros4hri/asr_vosk_language_models) repository.
 The related debians follow the naming scheme `pal-alum-asr-vosk-language-model-<locale>-<model_size>`.
 
 It also depends on the `vosk` debian package, which is a packaged virtual environment containing vosk.
@@ -79,18 +79,9 @@ All parameters are loaded in the lifecycle `configuration` transition.
 
 ## Launch
 
-If you have the `vosk` debian, please use the `asr_vosk` executable node and the `asr_vosk_with_args.launch.py` launch file.
-Otherwise, if you installed via pip, please use `pal_asr_vosk` and `asr_vosk.launch.py`.
 
 ```bash
 ros2 launch asr_vosk asr_vosk.launch.py
-```
-
-If you installed `vosk` via pip, instead of using the PAL debian package,
-you need to disable the usage of the PAL virtual environment for `vosk`:
-
-```bash
-ros2 launch asr_vosk asr_vosk.launch.py use_vosk_venv:=False
 ```
 
 The `asr_vosk.launch.py` launch file accepts as arguments and configures the defined [parameters](#parameters).
@@ -98,10 +89,11 @@ It also automatically transitions the node to the active state.
 
 ## Example
 
-To test thepackage using the system default microphone:
+To test the package using the system default microphone:
 
-1. Install the `audio_capture` package:
-   `sudo apt install pal-alum-audio-capture`
+1. Install the
+   [`audio_capture`](https://github.com/ros-drivers/audio_common/tree/ros2)
+   package (`sudo apt install pal-alum-audio-capture` on PAL robots)
 1. Launch the `audio_capture` package:
    `ros2 launch audio_capture capture.launch.xml audio_topic:=channel0 format:=wave`
 1. In a new terminal, launch the `asr_vosk` package:
